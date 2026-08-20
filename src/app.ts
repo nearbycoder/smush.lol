@@ -150,7 +150,7 @@ export const app = new Elysia({
 
     console.error(error);
     set.status = 500;
-    return { error: "Something went sideways while smushing that image." };
+    return { error: "The image could not be processed." };
   })
   .use(
     staticPlugin({

@@ -47,6 +47,7 @@ const progressiveRow = byId<HTMLElement>("progressive-row");
 const smushButton = byId<HTMLButtonElement>("smush-button");
 const resetButton = byId<HTMLButtonElement>("reset-button");
 const controlHint = byId<HTMLElement>("control-hint");
+const advancedOptions = byId<HTMLDetailsElement>("advanced-options");
 const toast = byId<HTMLDivElement>("toast");
 
 interface ImageInfo {
@@ -117,7 +118,7 @@ function clearResult(): void {
 }
 
 function renderStats(info: ImageInfo): void {
-  dimensionStat.textContent = info.width > 0 && info.height > 0 ? `${info.width} × ${info.height}` : "Read on smush";
+  dimensionStat.textContent = info.width > 0 && info.height > 0 ? `${info.width} × ${info.height}` : "Read on convert";
   sizeStat.textContent = formatBytes(info.size);
   typeStat.textContent = friendlyType(info.type);
 }
@@ -138,11 +139,11 @@ function setView(view: "original" | "result"): void {
 
 async function loadFile(file: File): Promise<void> {
   if (!isSupportedImage(file)) {
-    showToast("That doesn’t look like an image Bun can smush.", true);
+    showToast("Choose a supported image file.", true);
     return;
   }
   if (file.size > MAX_FILE_BYTES) {
-    showToast("That image is over 15 MB. Give it a little pre-smush first.", true);
+    showToast("The image must be 15 MB or smaller.", true);
     return;
   }
 
@@ -163,14 +164,14 @@ async function loadFile(file: File): Promise<void> {
     sourceInfo.width = dimensions.width;
     sourceInfo.height = dimensions.height;
   } catch {
-    showToast("Your browser can’t preview this format, but Bun will still give it a go.");
+    showToast("This format cannot be previewed in your browser. Bun.Image may still support it.");
   }
 
   sourceName.textContent = file.name;
   dropZone.hidden = true;
   previewShell.hidden = false;
   smushButton.disabled = false;
-  controlHint.textContent = "Ready when you are. Your original stays untouched.";
+  controlHint.textContent = "Ready to convert. The original file will not be changed.";
   resetControls();
   setView("original");
 }
@@ -258,9 +259,9 @@ demoButton.addEventListener("click", (event) => {
   context.fillStyle = "#17160f";
   context.textAlign = "center";
   context.font = "900 116px Arial, sans-serif";
-  context.fillText("SMUSH ME", 0, 20);
+  context.fillText("SAMPLE IMAGE", 0, 20);
   context.font = "700 32px monospace";
-  context.fillText("BIG IMAGE ENERGY • 1400 × 900", 0, 94);
+  context.fillText("1400 × 900 • PNG", 0, 94);
   context.restore();
 
   canvas.toBlob((blob) => {
@@ -297,7 +298,7 @@ heightInput.addEventListener("input", () => {
 document.querySelectorAll<HTMLButtonElement>("[data-scale], [data-max-width]").forEach((button) => {
   button.addEventListener("click", () => {
     if (!sourceInfo.width || !sourceInfo.height) {
-      showToast("This format’s dimensions will be read by Bun when you smush it.");
+      showToast("The image dimensions will be read during conversion.");
       return;
     }
 
@@ -389,6 +390,7 @@ function resetControls(): void {
     button.classList.toggle("active", button.dataset.rotation === "0");
   });
   paletteOptions.hidden = true;
+  advancedOptions.open = false;
   updateFormatSettings();
   for (const range of [brightnessInput, saturationInput, qualityInput, compressionInput, colorsInput]) {
     range.dispatchEvent(new Event("input"));
@@ -397,14 +399,14 @@ function resetControls(): void {
 
 resetButton.addEventListener("click", () => {
   resetControls();
-  showToast("Fresh slate. Same lovely image.");
+  showToast("Settings reset.");
 });
 
 function setBusy(nextBusy: boolean): void {
   busy = nextBusy;
   processing.hidden = !nextBusy;
   smushButton.disabled = nextBusy || !selectedFile;
-  smushButton.querySelector("strong")!.textContent = nextBusy ? "Smushing…" : "Smush this image";
+  smushButton.querySelector("strong")!.textContent = nextBusy ? "Processing…" : "Convert image";
 }
 
 function responseFilename(response: Response, fallback: string): string {
@@ -429,8 +431,8 @@ controls.addEventListener("submit", async (event) => {
     });
 
     if (!response.ok) {
-      const body = (await response.json().catch(() => ({ error: "The smush didn’t land." }))) as { error?: string };
-      throw new Error(body.error ?? "The smush didn’t land.");
+      const body = (await response.json().catch(() => ({ error: "The image could not be converted." }))) as { error?: string };
+      throw new Error(body.error ?? "The image could not be converted.");
     }
 
     const blob = await response.blob();
@@ -456,21 +458,21 @@ controls.addEventListener("submit", async (event) => {
     const percent = sourceInfo.size > 0 ? Math.round((1 - blob.size / sourceInfo.size) * 100) : 0;
     if (percent > 0) {
       resultBadge.textContent = `${percent}% smaller`;
-      resultSummary.textContent = `${formatBytes(sourceInfo.size)} → ${formatBytes(blob.size)}. That’ll travel nicely.`;
+      resultSummary.textContent = `${formatBytes(sourceInfo.size)} → ${formatBytes(blob.size)}`;
     } else if (percent < 0) {
       resultBadge.textContent = `${Math.abs(percent)}% bigger`;
-      resultSummary.textContent = `${formatBytes(blob.size)} of high-fidelity image goodness.`;
+      resultSummary.textContent = `${formatBytes(sourceInfo.size)} → ${formatBytes(blob.size)}`;
     } else {
-      resultBadge.textContent = "Smushed!";
-      resultSummary.textContent = `${formatBytes(blob.size)} and ready to go.`;
+      resultBadge.textContent = "Ready";
+      resultSummary.textContent = formatBytes(blob.size);
     }
 
     resultTab.disabled = false;
     resultBar.hidden = false;
     setView("result");
-    showToast(`Done in Bun ${response.headers.get("x-bun-version") ?? "1.4"}. Looking squishy.`);
+    showToast(`Image converted with Bun ${response.headers.get("x-bun-version") ?? "1.4"}.`);
   } catch (error) {
-    showToast(error instanceof Error ? error.message : "The smush didn’t land.", true);
+    showToast(error instanceof Error ? error.message : "The image could not be converted.", true);
   } finally {
     setBusy(false);
   }
