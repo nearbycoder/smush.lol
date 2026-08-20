@@ -193,7 +193,7 @@ footer {
 }
 
 .hero {
-  padding: 54px 0 42px;
+  padding: 38px 0 34px;
   text-align: center;
 }
 
@@ -218,7 +218,7 @@ footer {
   font-size: clamp(3rem, 7vw, 5.25rem);
   font-weight: 900;
   letter-spacing: -0.075em;
-  line-height: 0.95;
+  line-height: 0.88;
 }
 
 .hero h1 span {
@@ -245,7 +245,7 @@ footer {
 
 .hero-copy {
   max-width: 610px;
-  margin: 16px auto 0;
+  margin: 12px auto 0;
   color: #49463d;
   font-size: clamp(1rem, 2vw, 1.15rem);
   line-height: 1.65;
@@ -763,7 +763,7 @@ footer {
 .control-group {
   min-width: 0;
   margin: 0;
-  padding: 22px 20px 24px;
+  padding: 10px 20px 18px;
   border: 0;
   border-bottom: 1.5px solid var(--line);
 }
@@ -771,7 +771,7 @@ footer {
 .control-group legend {
   display: flex;
   width: calc(100% + 2px);
-  margin: 0 0 20px -1px;
+  margin: 0 0 10px -1px;
   padding: 0;
   align-items: center;
   gap: 9px;
@@ -1031,7 +1031,7 @@ input[type="range"]::-moz-range-thumb {
 .format-tabs input:focus-visible + span { box-shadow: 0 0 0 3px rgba(201, 243, 107, 0.6); }
 
 .format-settings {
-  margin-top: 15px;
+  margin-top: 12px;
   padding: 1px 13px 13px;
   border: 1px dashed #aaa398;
   border-radius: 10px;
@@ -1051,8 +1051,8 @@ input[type="range"]::-moz-range-thumb {
 
 .advanced-options > summary {
   display: grid;
-  min-height: 68px;
-  padding: 14px 20px;
+  min-height: 64px;
+  padding: 12px 20px;
   align-items: center;
   grid-template-columns: 1fr auto;
   grid-template-rows: auto auto;
@@ -1139,8 +1139,8 @@ input[type="range"]::-moz-range-thumb {
 .smush-button {
   display: flex;
   width: calc(100% - 40px);
-  min-height: 66px;
-  margin: 22px 20px 8px;
+  min-height: 62px;
+  margin: 18px 20px 7px;
   padding: 10px 14px;
   align-items: center;
   justify-content: center;
@@ -1165,7 +1165,7 @@ input[type="range"]::-moz-range-thumb {
 .button-arrow { font-size: 1.35rem; font-weight: 900; }
 
 .control-hint {
-  margin: 11px 20px 22px;
+  margin: 9px 20px 18px;
   color: #817c70;
   font-size: 0.64rem;
   text-align: center;
@@ -1251,9 +1251,9 @@ footer p { margin: 0; color: var(--ink-soft); font-size: 0.7rem; text-align: cen
   .site-header { padding-top: 16px; }
   .runtime-pill { display: none; }
   .tiny-link { font-size: 0.65rem; }
-  .hero { padding: 38px 0 32px; }
-  .hero h1 { margin-top: 0; font-size: clamp(2.8rem, 14vw, 4.4rem); }
-  .hero-copy { max-width: 94%; margin-top: 14px; }
+  .hero { padding: 28px 0 26px; }
+  .hero h1 { margin-top: 0; font-size: clamp(2.8rem, 14vw, 4.4rem); line-height: 0.9; }
+  .hero-copy { max-width: 94%; margin-top: 10px; }
   .drop-zone { min-height: 490px; padding-inline: 22px; }
   .drop-visual { width: 180px; transform: scale(0.88); }
   .file-note { max-width: 280px; line-height: 1.6; }
