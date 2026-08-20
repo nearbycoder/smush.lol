@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Resize, remix, and convert images with Bun.Image. Fast, private, and delightfully squishy."
+    />
+    <meta name="theme-color" content="#fff7ea" />
+    <meta property="og:title" content="smush.lol — Make images behave" />
+    <meta
+      property="og:description"
+      content="A tiny, fast image workbench powered by Bun.Image and Elysia."
+    />
+    <title>smush.lol — Make images behave</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%AB%A0%3C/text%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="./styles.css" />
+    <script type="module" src="./app.ts"></script>
+  </head>
+  <body>
+    <div class="ambient ambient-one" aria-hidden="true"></div>
+    <div class="ambient ambient-two" aria-hidden="true"></div>
+
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="smush.lol home">
+        <span class="brand-mark" aria-hidden="true">
+          <span class="brand-face">•ᴗ•</span>
+        </span>
+        <span>smush<span class="brand-dot">.</span>lol</span>
+      </a>
+
+      <div class="header-meta">
+        <span class="runtime-pill"><span class="status-dot"></span>Bun 1.4 native</span>
+        <a class="tiny-link" href="https://bun.com/docs/runtime/image" target="_blank" rel="noreferrer">
+          How it works <span aria-hidden="true">↗</span>
+        </a>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="eyebrow"><span>Image tools without the tool shed</span></div>
+        <h1 id="hero-title">Drop it. Tweak it.<br /><span>Smush it.</span></h1>
+        <p class="hero-copy">
+          Resize, rotate, remix, and convert any image with Bun’s ridiculously fast native image API.
+        </p>
+
+        <div class="hero-chips" aria-label="App highlights">
+          <span><i class="chip-icon chip-peach" aria-hidden="true">↯</i>No signup</span>
+          <span><i class="chip-icon chip-lime" aria-hidden="true">◇</i>Nothing saved</span>
+          <span><i class="chip-icon chip-purple" aria-hidden="true">✦</i>Actually fast</span>
+        </div>
+      </section>
+
+      <section class="workbench" aria-label="Image editor">
+        <div class="preview-column">
+          <div id="drop-zone" class="drop-zone" aria-describedby="drop-help">
+            <input
+              id="file-input"
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/heic,image/heif,image/avif,image/tiff"
+              hidden
+            />
+            <div class="drop-visual" aria-hidden="true">
+              <div class="wobble-card card-back"></div>
+              <div class="wobble-card card-mid"></div>
+              <div class="wobble-card card-front">
+                <svg viewBox="0 0 88 74" fill="none">
+                  <path d="M12 9h64v54H12z" stroke="currentColor" stroke-width="3" />
+                  <circle cx="30" cy="27" r="7" fill="currentColor" />
+                  <path d="m17 57 18-18 11 10 9-8 16 16" stroke="currentColor" stroke-width="3" stroke-linejoin="round" />
+                </svg>
+              </div>
+              <span class="spark spark-one">✦</span>
+              <span class="spark spark-two">✧</span>
+              <span class="spark spark-three">＋</span>
+            </div>
+            <h2>Give us an image</h2>
+            <p id="drop-help">Drag & drop it here, paste it, or <button id="browse-button" class="text-link" type="button">browse your files</button></p>
+            <span class="file-note">JPEG, PNG, WebP, GIF, BMP, HEIC, AVIF or TIFF · up to 15 MB</span>
+            <button id="demo-button" class="demo-button" type="button">
+              <span aria-hidden="true">✦</span> Try a demo image
+            </button>
+          </div>
+
+          <div id="preview-shell" class="preview-shell" hidden>
+            <div class="panel-topbar">
+              <div>
+                <span class="panel-kicker">Your canvas</span>
+                <strong id="source-name" class="source-name">image.png</strong>
+              </div>
+              <button id="replace-button" class="small-button" type="button">
+                <span aria-hidden="true">↻</span> Replace
+              </button>
+            </div>
+
+            <div class="compare-tabs" role="tablist" aria-label="Image preview">
+              <button id="original-tab" class="compare-tab active" type="button" role="tab" aria-selected="true">Original</button>
+              <button id="result-tab" class="compare-tab" type="button" role="tab" aria-selected="false" disabled>
+                Smushed <span class="new-dot" aria-label="new result"></span>
+              </button>
+            </div>
+
+            <div id="image-stage" class="image-stage">
+              <div class="checkerboard" aria-hidden="true"></div>
+              <img id="preview-image" alt="Preview of the selected image" />
+              <div id="processing" class="processing" hidden>
+                <div class="squish-loader" aria-hidden="true"><span>•ᴗ•</span></div>
+                <strong>Smushing pixels…</strong>
+                <small>Bun is doing the heavy lifting</small>
+              </div>
+            </div>
+
+            <div class="image-stats" aria-live="polite">
+              <div>
+                <span>Dimensions</span>
+                <strong id="dimension-stat">—</strong>
+              </div>
+              <div>
+                <span>File size</span>
+                <strong id="size-stat">—</strong>
+              </div>
+              <div>
+                <span>Type</span>
+                <strong id="type-stat">—</strong>
+              </div>
+            </div>
+
+            <div id="result-bar" class="result-bar" hidden>
+              <div class="result-copy">
+                <span id="result-badge" class="result-badge">Smushed!</span>
+                <p id="result-summary">Your image is ready.</p>
+              </div>
+              <button id="download-button" class="download-button" type="button">
+                Download <span aria-hidden="true">↓</span>
+              </button>
+            </div>
+          </div>
+
+          <aside class="privacy-card">
+            <span class="privacy-icon" aria-hidden="true">⌁</span>
+            <div>
+              <strong>Here for a good time, not a long time.</strong>
+              <p>Your image is processed in memory and immediately forgotten. Nothing is stored.</p>
+            </div>
+          </aside>
+        </div>
+
+        <form id="controls" class="control-panel" aria-label="Image controls">
+          <div class="control-header">
+            <div>
+              <span class="panel-kicker">The fun part</span>
+              <h2>Make it behave</h2>
+            </div>
+            <button id="reset-button" class="reset-button" type="button">Reset all</button>
+          </div>
+
+          <fieldset class="control-group">
+            <legend><span class="step-number step-lime">1</span>Size it up</legend>
+
+            <div class="dimension-row">
+              <label class="input-label">
+                <span>Width</span>
+                <span class="number-wrap">
+                  <input id="width-input" name="width" type="number" min="1" max="12000" placeholder="Auto" />
+                  <i>px</i>
+                </span>
+              </label>
+
+              <button id="lock-ratio" class="ratio-lock active" type="button" aria-pressed="true" aria-label="Keep aspect ratio">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M9 8H7a4 4 0 0 0 0 8h2M15 8h2a4 4 0 1 1 0 8h-2M8 12h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                </svg>
+              </button>
+
+              <label class="input-label">
+                <span>Height</span>
+                <span class="number-wrap">
+                  <input id="height-input" name="height" type="number" min="1" max="12000" placeholder="Auto" />
+                  <i>px</i>
+                </span>
+              </label>
+            </div>
+
+            <div class="preset-row" aria-label="Size presets">
+              <button type="button" data-scale="1">Original</button>
+              <button type="button" data-scale="0.5">50%</button>
+              <button type="button" data-scale="0.25">25%</button>
+              <button type="button" data-max-width="1200">1200w</button>
+              <button type="button" data-max-width="800">800w</button>
+            </div>
+
+            <div class="two-col-fields">
+              <label class="select-label">
+                <span>Fit</span>
+                <select name="fit">
+                  <option value="inside">Fit inside</option>
+                  <option value="fill">Stretch to fill</option>
+                </select>
+              </label>
+              <label class="select-label">
+                <span>Resize flavor</span>
+                <select name="filter">
+                  <option value="lanczos3">Crisp photos</option>
+                  <option value="mitchell">Smooth gradients</option>
+                  <option value="mks2021">Social-ready</option>
+                  <option value="nearest">Pixel art</option>
+                  <option value="box">Big downscales</option>
+                  <option value="lanczos2">Soft & sharp</option>
+                  <option value="cubic">Extra sharp</option>
+                  <option value="bilinear">Fast & soft</option>
+                </select>
+              </label>
+            </div>
+
+            <label class="check-row">
+              <span>
+                <strong>Never enlarge</strong>
+                <small>Keep tiny images tiny</small>
+              </span>
+              <input name="withoutEnlargement" type="checkbox" checked />
+              <i aria-hidden="true"></i>
+            </label>
+          </fieldset>
+
+          <fieldset class="control-group">
+            <legend><span class="step-number step-peach">2</span>Twist & remix</legend>
+
+            <div class="label-line"><span>Rotate</span><small>Clockwise</small></div>
+            <div class="icon-button-row rotation-row" aria-label="Rotation">
+              <button class="active" type="button" data-rotation="0" aria-label="No rotation">0°</button>
+              <button type="button" data-rotation="90" aria-label="Rotate 90 degrees">
+                <span aria-hidden="true">↻</span> 90°
+              </button>
+              <button type="button" data-rotation="180" aria-label="Rotate 180 degrees">
+                <span aria-hidden="true">↻</span> 180°
+              </button>
+              <button type="button" data-rotation="270" aria-label="Rotate 270 degrees">
+                <span aria-hidden="true">↻</span> 270°
+              </button>
+              <input id="rotation-input" name="rotate" type="hidden" value="0" />
+            </div>
+
+            <div class="label-line"><span>Flip</span><small>Get a new perspective</small></div>
+            <div class="icon-button-row flip-row">
+              <button id="flop-button" type="button" aria-pressed="false">
+                <span class="flip-glyph" aria-hidden="true">↔</span> Horizontal
+              </button>
+              <button id="flip-button" type="button" aria-pressed="false">
+                <span class="flip-glyph" aria-hidden="true">↕</span> Vertical
+              </button>
+              <input id="flop-input" name="flop" type="hidden" value="false" />
+              <input id="flip-input" name="flip" type="hidden" value="false" />
+            </div>
+
+            <label class="range-control">
+              <span class="range-label"><span>Brightness</span><output id="brightness-value">100%</output></span>
+              <input id="brightness-input" name="brightness" type="range" min="0" max="2" value="1" step="0.05" />
+            </label>
+
+            <label class="range-control">
+              <span class="range-label"><span>Saturation</span><output id="saturation-value">100%</output></span>
+              <input id="saturation-input" name="saturation" type="range" min="0" max="2" value="1" step="0.05" />
+            </label>
+          </fieldset>
+
+          <fieldset class="control-group output-group">
+            <legend><span class="step-number step-purple">3</span>Pick your flavor</legend>
+
+            <div class="format-tabs">
+              <label><input type="radio" name="format" value="webp" checked /><span>WebP<small>Smallest</small></span></label>
+              <label><input type="radio" name="format" value="jpeg" /><span>JPEG<small>Classic</small></span></label>
+              <label><input type="radio" name="format" value="png" /><span>PNG<small>Lossless</small></span></label>
+            </div>
+
+            <div id="quality-settings" class="format-settings">
+              <label class="range-control">
+                <span class="range-label"><span>Quality</span><output id="quality-value">82</output></span>
+                <input id="quality-input" name="quality" type="range" min="1" max="100" value="82" step="1" />
+              </label>
+              <label id="lossless-row" class="check-row compact">
+                <span><strong>Lossless WebP</strong><small>Bigger, pixel-perfect files</small></span>
+                <input name="lossless" type="checkbox" />
+                <i aria-hidden="true"></i>
+              </label>
+              <label id="progressive-row" class="check-row compact" hidden>
+                <span><strong>Progressive JPEG</strong><small>Loads in satisfying little waves</small></span>
+                <input name="progressive" type="checkbox" checked />
+                <i aria-hidden="true"></i>
+              </label>
+            </div>
+
+            <div id="png-settings" class="format-settings" hidden>
+              <label class="range-control">
+                <span class="range-label"><span>Compression</span><output id="compression-value">6</output></span>
+                <input id="compression-input" name="compressionLevel" type="range" min="0" max="9" value="6" step="1" />
+              </label>
+              <label class="check-row compact">
+                <span><strong>Palette mode</strong><small>Great for icons and flat colors</small></span>
+                <input id="palette-input" name="palette" type="checkbox" />
+                <i aria-hidden="true"></i>
+              </label>
+              <div id="palette-options" class="palette-options" hidden>
+                <label class="range-control">
+                  <span class="range-label"><span>Colors</span><output id="colors-value">128</output></span>
+                  <input id="colors-input" name="colors" type="range" min="2" max="256" value="128" step="1" />
+                </label>
+                <label class="check-row compact">
+                  <span><strong>Dither colors</strong><small>Smoother-looking gradients</small></span>
+                  <input name="dither" type="checkbox" checked />
+                  <i aria-hidden="true"></i>
+                </label>
+              </div>
+            </div>
+          </fieldset>
+
+          <button id="smush-button" class="smush-button" type="submit" disabled>
+            <span class="button-face" aria-hidden="true">•ᴗ•</span>
+            <span class="button-copy"><strong>Smush this image</strong><small>Powered by Bun.Image</small></span>
+            <span class="button-arrow" aria-hidden="true">→</span>
+          </button>
+          <p id="control-hint" class="control-hint">Drop an image to wake up the controls.</p>
+        </form>
+      </section>
+
+      <section class="native-strip" aria-label="Technology">
+        <p><span class="native-star">✦</span> No Sharp. No native add-ons. No nonsense.</p>
+        <div>
+          <span>BUN.IMAGE</span>
+          <i aria-hidden="true">×</i>
+          <span>ELYSIA</span>
+          <i aria-hidden="true">×</i>
+          <span>RAILWAY</span>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <a class="brand footer-brand" href="/">
+        <span class="brand-mark mini" aria-hidden="true"><span class="brand-face">•ᴗ•</span></span>
+        <span>smush<span class="brand-dot">.</span>lol</span>
+      </a>
+      <p>Made for people with images and places to put them.</p>
+      <div class="footer-links">
+        <a href="https://github.com/nearbycoder/smush.lol" target="_blank" rel="noreferrer">Source ↗</a>
+        <a href="https://bun.com/blog/bun-v1.4" target="_blank" rel="noreferrer">Bun 1.4 ↗</a>
+      </div>
+    </footer>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  </body>
+</html>
