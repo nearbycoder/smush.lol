@@ -69,9 +69,17 @@
               <span class="spark spark-two">✧</span>
               <span class="spark spark-three">＋</span>
             </div>
-            <h2>Drop an image here</h2>
-            <p id="drop-help">or <button id="browse-button" class="text-link" type="button">choose a file</button> from your device</p>
+            <h2>Choose an image</h2>
+            <p id="drop-help">Drop it here or <button id="browse-button" class="text-link" type="button">choose a file</button></p>
             <span class="file-note">JPEG, PNG, WebP, GIF, BMP, HEIC, AVIF or TIFF · up to 15 MB</span>
+
+            <div class="source-divider"><span>or use a URL</span></div>
+            <form id="url-form" class="url-form">
+              <label class="visually-hidden" for="image-url">Public image URL</label>
+              <input id="image-url" type="url" inputmode="url" autocomplete="url" placeholder="https://example.com/image.jpg" required />
+              <button id="url-button" type="submit">Load</button>
+            </form>
+
             <button id="demo-button" class="demo-button" type="button">
               Use sample image
             </button>
@@ -125,9 +133,14 @@
                 <span id="result-badge" class="result-badge">Ready</span>
                 <p id="result-summary">Your image is ready.</p>
               </div>
-              <button id="download-button" class="download-button" type="button">
-                Download <span aria-hidden="true">↓</span>
-              </button>
+              <div class="result-actions">
+                <button id="copy-url-button" class="copy-url-button" type="button" hidden>
+                  Copy URL
+                </button>
+                <button id="download-button" class="download-button" type="button">
+                  Download <span aria-hidden="true">↓</span>
+                </button>
+              </div>
             </div>
           </div>
 

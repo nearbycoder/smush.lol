@@ -4,12 +4,13 @@ A cheerful, no-account image workbench powered by [Bun.Image](https://bun.com/do
 
 ## What it can do
 
-- Drag, browse, paste, or start with a generated demo image
+- Drag, browse, paste, load a public image URL, or start with a generated demo image
 - Resize up to 12,000px per side with Bun's native resampling kernels
 - Rotate, flip horizontally or vertically, and adjust brightness/saturation
 - Export WebP, progressive JPEG, or PNG
 - Tune quality, lossless WebP, PNG compression, palette colors, and dithering
 - Preview before/after size and dimensions, then download the result
+- Copy a reusable transformation URL for remote images
 - Process images only in memory; no files or metadata are stored
 
 Uploads are capped at 15 MB and 48 megapixels. JPEG, PNG, and WebP are portable across Railway's Linux runtime. Bun can also decode the first frame of GIFs and handle BMP; HEIC, AVIF, and TIFF support depends on the host platform.
@@ -47,6 +48,22 @@ bun run build
 
 ## API
 
+### Transform a remote image
+
+`GET /api/image` accepts a public HTTP(S) image URL and transform options as query parameters. The response is an inline image suitable for an `<img>` tag:
+
+```text
+https://smush.lol/api/image?url=https%3A%2F%2Fexample.com%2Fphoto.jpg&width=800&format=webp&quality=82
+```
+
+```html
+<img src="https://smush.lol/api/image?url=https%3A%2F%2Fexample.com%2Fphoto.jpg&amp;width=800&amp;format=webp" alt="" />
+```
+
+Remote sources are limited to 15 MB, three redirects, and a ten-second fetch. Localhost, private-network addresses, credentials, non-web protocols, and nonstandard ports are rejected. Redirect destinations are checked again before they are fetched.
+
+### Transform an upload
+
 `POST /api/smush` accepts `multipart/form-data` with an `image` file and optional transform fields:
 
 | Field | Values | Default |
@@ -60,7 +77,7 @@ bun run build
 | `format` | `webp`, `jpeg`, `png` | `webp` |
 | `quality` | `1`–`100` | `82` |
 
-The response body is the transformed image. Headers include the output dimensions, format, Bun version, and a safe download filename.
+Both endpoints support the same transform fields. The response body is the transformed image. Headers include the output dimensions, format, Bun version, and a safe output filename.
 
 ## Deploy on Railway
 
@@ -81,4 +98,4 @@ Add both records at the DNS host. For an apex domain, the provider must support 
 
 ## Privacy model
 
-The request body is held only for the lifetime of the HTTP request. The server does not write uploads to disk, a database, object storage, analytics, or logs. The generated output is returned directly in the response with `Cache-Control: no-store`.
+Image bytes are held only for the lifetime of the HTTP request. The server does not write uploads or remote images to disk, a database, object storage, analytics, or application logs. Upload responses use `Cache-Control: no-store`; remote transformation responses may be cached by clients for one hour.

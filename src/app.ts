@@ -1,12 +1,11 @@
 import { staticPlugin } from "@elysiajs/static";
 import { Elysia, t } from "elysia";
+import { transformImage } from "./image";
+import { fetchRemoteImage, RemoteImageError } from "./remote-image";
 import {
   errorMessage,
   MAX_FILE_BYTES,
-  MAX_PIXELS,
-  outputFilename,
   parseTransformSettings,
-  validateOutputSize,
 } from "./transform";
 
 const imageTypes = [
@@ -21,6 +20,67 @@ const imageTypes = [
   "image/tiff",
 ];
 
+const transformFieldSchema = {
+  width: t.Optional(t.String()),
+  height: t.Optional(t.String()),
+  fit: t.Optional(t.String()),
+  filter: t.Optional(t.String()),
+  withoutEnlargement: t.Optional(t.String()),
+  rotate: t.Optional(t.String()),
+  flip: t.Optional(t.String()),
+  flop: t.Optional(t.String()),
+  brightness: t.Optional(t.String()),
+  saturation: t.Optional(t.String()),
+  format: t.Optional(t.String()),
+  quality: t.Optional(t.String()),
+  progressive: t.Optional(t.String()),
+  lossless: t.Optional(t.String()),
+  compressionLevel: t.Optional(t.String()),
+  palette: t.Optional(t.String()),
+  colors: t.Optional(t.String()),
+  dither: t.Optional(t.String()),
+};
+
+type TransformFields = Record<string, FormDataEntryValue | undefined>;
+
+async function imageResponse(
+  bytes: ArrayBuffer | Uint8Array,
+  inputName: string,
+  fields: TransformFields,
+  options: { cacheControl: string; disposition: "attachment" | "inline" },
+): Promise<Response> {
+  const settings = parseTransformSettings(fields);
+  const result = await transformImage(bytes, inputName, settings);
+
+  return new Response(result.output, {
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Cache-Control": options.cacheControl,
+      "Content-Disposition": `${options.disposition}; filename="${result.filename}"`,
+      "Content-Length": String(result.output.size),
+      "Content-Type": result.output.type,
+      "Cross-Origin-Resource-Policy": "cross-origin",
+      "X-Bun-Version": Bun.version,
+      "X-Content-Type-Options": "nosniff",
+      "X-Image-Format": settings.format,
+      "X-Image-Height": String(result.height),
+      "X-Image-Width": String(result.width),
+      "X-Original-Format": result.metadata.format,
+    },
+  });
+}
+
+function handleImageError(error: unknown, set: { status?: number | string }): { error: string } {
+  if (error instanceof RemoteImageError) {
+    set.status = error.status;
+    return { error: error.message };
+  }
+
+  const message = errorMessage(error);
+  set.status = message.includes("too large") ? 413 : 422;
+  return { error: message };
+}
+
 export const app = new Elysia({
   serve: {
     maxRequestBodySize: MAX_FILE_BYTES + 1024 * 1024,
@@ -31,6 +91,28 @@ export const app = new Elysia({
     runtime: "bun",
     version: Bun.version,
   }))
+  .get(
+    "/api/image",
+    async ({ query, set }) => {
+      const { url, ...fields } = query;
+
+      try {
+        const remote = await fetchRemoteImage(url);
+        return await imageResponse(remote.bytes, remote.filename, fields, {
+          cacheControl: "public, max-age=3600, stale-while-revalidate=86400",
+          disposition: "inline",
+        });
+      } catch (error) {
+        return handleImageError(error, set);
+      }
+    },
+    {
+      query: t.Object({
+        url: t.String({ minLength: 1, maxLength: 4096 }),
+        ...transformFieldSchema,
+      }),
+    },
+  )
   .post(
     "/api/smush",
     async ({ body, set }) => {
@@ -38,81 +120,12 @@ export const app = new Elysia({
 
       try {
         const bytes = await image.arrayBuffer();
-        const settings = parseTransformSettings(fields);
-
-        const metadata = await new Bun.Image(bytes, {
-          autoOrient: true,
-          maxPixels: MAX_PIXELS,
-        }).metadata();
-
-        validateOutputSize(settings, metadata);
-
-        const pipeline = new Bun.Image(bytes, {
-          autoOrient: true,
-          maxPixels: MAX_PIXELS,
-        });
-
-        if (settings.rotate !== 0) pipeline.rotate(settings.rotate);
-        if (settings.flip) pipeline.flip();
-        if (settings.flop) pipeline.flop();
-
-        if (settings.width || settings.height) {
-          if (settings.width) {
-            pipeline.resize(settings.width, settings.height, {
-              fit: settings.fit,
-              filter: settings.filter,
-              withoutEnlargement: settings.withoutEnlargement,
-            });
-          } else if (settings.height) {
-            const width = Math.max(1, Math.round((settings.height / metadata.height) * metadata.width));
-            pipeline.resize(width, settings.height, {
-              fit: settings.fit,
-              filter: settings.filter,
-              withoutEnlargement: settings.withoutEnlargement,
-            });
-          }
-        }
-
-        if (settings.brightness !== 1 || settings.saturation !== 1) {
-          pipeline.modulate({
-            brightness: settings.brightness,
-            saturation: settings.saturation,
-          });
-        }
-
-        if (settings.format === "jpeg") {
-          pipeline.jpeg({ quality: settings.quality, progressive: settings.progressive });
-        } else if (settings.format === "png") {
-          pipeline.png({
-            compressionLevel: settings.compressionLevel,
-            palette: settings.palette,
-            colors: settings.colors,
-            dither: settings.dither,
-          });
-        } else {
-          pipeline.webp({ quality: settings.quality, lossless: settings.lossless });
-        }
-
-        const output = await pipeline.blob();
-        const filename = outputFilename(image.name, settings.format);
-
-        return new Response(output, {
-          headers: {
-            "Cache-Control": "no-store",
-            "Content-Disposition": `attachment; filename="${filename}"`,
-            "Content-Length": String(output.size),
-            "Content-Type": output.type,
-            "X-Bun-Version": Bun.version,
-            "X-Image-Format": settings.format,
-            "X-Image-Height": String(pipeline.height),
-            "X-Image-Width": String(pipeline.width),
-            "X-Original-Format": metadata.format,
-          },
+        return await imageResponse(bytes, image.name, fields, {
+          cacheControl: "no-store",
+          disposition: "attachment",
         });
       } catch (error) {
-        const message = errorMessage(error);
-        set.status = message.includes("too large") ? 413 : 422;
-        return { error: message };
+        return handleImageError(error, set);
       }
     },
     {
@@ -121,31 +134,18 @@ export const app = new Elysia({
           format: imageTypes,
           maxSize: MAX_FILE_BYTES,
         }),
-        width: t.Optional(t.String()),
-        height: t.Optional(t.String()),
-        fit: t.Optional(t.String()),
-        filter: t.Optional(t.String()),
-        withoutEnlargement: t.Optional(t.String()),
-        rotate: t.Optional(t.String()),
-        flip: t.Optional(t.String()),
-        flop: t.Optional(t.String()),
-        brightness: t.Optional(t.String()),
-        saturation: t.Optional(t.String()),
-        format: t.Optional(t.String()),
-        quality: t.Optional(t.String()),
-        progressive: t.Optional(t.String()),
-        lossless: t.Optional(t.String()),
-        compressionLevel: t.Optional(t.String()),
-        palette: t.Optional(t.String()),
-        colors: t.Optional(t.String()),
-        dither: t.Optional(t.String()),
+        ...transformFieldSchema,
       }),
     },
   )
-  .onError(({ code, error, set }) => {
+  .onError(({ code, error, path, set }) => {
     if (code === "VALIDATION") {
       set.status = 400;
-      return { error: "Please choose a supported image under 15 MB." };
+      return {
+        error: path === "/api/image"
+          ? "A public HTTP(S) image URL is required."
+          : "Please choose a supported image under 15 MB.",
+      };
     }
 
     console.error(error);

@@ -10,6 +10,9 @@ const dropZone = byId<HTMLDivElement>("drop-zone");
 const fileInput = byId<HTMLInputElement>("file-input");
 const browseButton = byId<HTMLButtonElement>("browse-button");
 const demoButton = byId<HTMLButtonElement>("demo-button");
+const urlForm = byId<HTMLFormElement>("url-form");
+const imageUrlInput = byId<HTMLInputElement>("image-url");
+const urlButton = byId<HTMLButtonElement>("url-button");
 const previewShell = byId<HTMLDivElement>("preview-shell");
 const previewImage = byId<HTMLImageElement>("preview-image");
 const sourceName = byId<HTMLElement>("source-name");
@@ -24,6 +27,7 @@ const resultBar = byId<HTMLDivElement>("result-bar");
 const resultBadge = byId<HTMLElement>("result-badge");
 const resultSummary = byId<HTMLElement>("result-summary");
 const downloadButton = byId<HTMLButtonElement>("download-button");
+const copyUrlButton = byId<HTMLButtonElement>("copy-url-button");
 const controls = byId<HTMLFormElement>("controls");
 const widthInput = byId<HTMLInputElement>("width-input");
 const heightInput = byId<HTMLInputElement>("height-input");
@@ -58,9 +62,12 @@ interface ImageInfo {
 }
 
 let selectedFile: File | null = null;
+let selectedRemoteUrl: string | null = null;
 let originalUrl: string | null = null;
+let originalUrlIsObject = false;
 let resultUrl: string | null = null;
 let resultBlob: Blob | null = null;
+let resultTransformUrl: string | null = null;
 let resultFilename = "smushed-image.webp";
 let sourceInfo: ImageInfo = { width: 0, height: 0, size: 0, type: "image" };
 let outputInfo: ImageInfo | null = null;
@@ -111,15 +118,23 @@ function clearResult(): void {
   if (resultUrl) URL.revokeObjectURL(resultUrl);
   resultUrl = null;
   resultBlob = null;
+  resultTransformUrl = null;
   outputInfo = null;
   resultTab.disabled = true;
   resultBar.hidden = true;
+  copyUrlButton.hidden = true;
   setView("original");
+}
+
+function setOriginalUrl(url: string, isObjectUrl: boolean): void {
+  if (originalUrl && originalUrlIsObject) URL.revokeObjectURL(originalUrl);
+  originalUrl = url;
+  originalUrlIsObject = isObjectUrl;
 }
 
 function renderStats(info: ImageInfo): void {
   dimensionStat.textContent = info.width > 0 && info.height > 0 ? `${info.width} × ${info.height}` : "Read on convert";
-  sizeStat.textContent = formatBytes(info.size);
+  sizeStat.textContent = info.type === "remote" ? "—" : formatBytes(info.size);
   typeStat.textContent = friendlyType(info.type);
 }
 
@@ -148,8 +163,8 @@ async function loadFile(file: File): Promise<void> {
   }
 
   selectedFile = file;
-  if (originalUrl) URL.revokeObjectURL(originalUrl);
-  originalUrl = URL.createObjectURL(file);
+  selectedRemoteUrl = null;
+  setOriginalUrl(URL.createObjectURL(file), true);
   clearResult();
 
   sourceInfo = {
@@ -176,12 +191,130 @@ async function loadFile(file: File): Promise<void> {
   setView("original");
 }
 
+function normalizedRemoteUrl(value: string): string {
+  const url = new URL(value);
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    throw new Error("The image URL must use HTTP or HTTPS.");
+  }
+  return url.toString();
+}
+
+function remoteDisplayName(value: string): string {
+  const url = new URL(value);
+  try {
+    return `${url.hostname}${url.pathname === "/" ? "" : decodeURIComponent(url.pathname)}`;
+  } catch {
+    return url.hostname;
+  }
+}
+
+function remoteTransformUrl(source: string, fields?: FormData): string {
+  const endpoint = new URL("/api/image", window.location.origin);
+  endpoint.searchParams.set("url", source);
+
+  if (!fields) {
+    endpoint.searchParams.set("format", "webp");
+    endpoint.searchParams.set("quality", "82");
+    return endpoint.toString();
+  }
+
+  const values = Object.fromEntries(
+    Array.from(fields.entries()).filter((entry): entry is [string, string] => typeof entry[1] === "string"),
+  );
+  const setWhenChanged = (key: string, fallback: string) => {
+    const value = values[key];
+    if (value && value !== fallback) endpoint.searchParams.set(key, value);
+  };
+
+  for (const dimension of ["width", "height"] as const) {
+    if (values[dimension]) endpoint.searchParams.set(dimension, values[dimension]);
+  }
+  setWhenChanged("format", "webp");
+  if (values.format !== "png") setWhenChanged("quality", "82");
+  setWhenChanged("fit", "inside");
+  setWhenChanged("filter", "lanczos3");
+  if (values.withoutEnlargement) endpoint.searchParams.set("withoutEnlargement", "1");
+  setWhenChanged("rotate", "0");
+  setWhenChanged("flip", "false");
+  setWhenChanged("flop", "false");
+  setWhenChanged("brightness", "1");
+  setWhenChanged("saturation", "1");
+
+  if (values.format === "webp" && values.lossless) endpoint.searchParams.set("lossless", "1");
+  if (values.format === "jpeg" && values.progressive) endpoint.searchParams.set("progressive", "1");
+  if (values.format === "png") {
+    setWhenChanged("compressionLevel", "6");
+    if (values.palette) {
+      endpoint.searchParams.set("palette", "1");
+      setWhenChanged("colors", "128");
+      if (values.dither) endpoint.searchParams.set("dither", "1");
+    }
+  }
+
+  return endpoint.toString();
+}
+
+async function responseError(response: Response, fallback: string): Promise<Error> {
+  const body = (await response.json().catch(() => ({ error: fallback }))) as { error?: string };
+  return new Error(body.error ?? fallback);
+}
+
+async function loadRemoteImage(value: string): Promise<void> {
+  let source: string;
+  try {
+    source = normalizedRemoteUrl(value.trim());
+  } catch (error) {
+    showToast(error instanceof Error ? error.message : "Enter a valid public image URL.", true);
+    return;
+  }
+
+  urlButton.disabled = true;
+  urlButton.textContent = "Loading…";
+
+  try {
+    const response = await fetch(remoteTransformUrl(source));
+    if (!response.ok) throw await responseError(response, "The remote image could not be loaded.");
+
+    const blob = await response.blob();
+    const previewUrl = URL.createObjectURL(blob);
+    const dimensions = await getImageDimensions(blob).catch(() => ({ width: 0, height: 0 }));
+
+    selectedFile = null;
+    selectedRemoteUrl = source;
+    setOriginalUrl(previewUrl, true);
+    clearResult();
+    sourceInfo = {
+      width: dimensions.width,
+      height: dimensions.height,
+      size: 0,
+      type: "remote",
+    };
+
+    sourceName.textContent = remoteDisplayName(source);
+    dropZone.hidden = true;
+    previewShell.hidden = false;
+    smushButton.disabled = false;
+    controlHint.textContent = "Ready to convert from the source URL.";
+    resetControls();
+    setView("original");
+  } catch (error) {
+    showToast(error instanceof Error ? error.message : "The remote image could not be loaded.", true);
+  } finally {
+    urlButton.disabled = false;
+    urlButton.textContent = "Load";
+  }
+}
+
 function chooseFiles(): void {
   fileInput.value = "";
   fileInput.click();
 }
 
-dropZone.addEventListener("click", chooseFiles);
+dropZone.addEventListener("click", (event) => {
+  const target = event.target;
+  if (target instanceof Element && target.closest("button, input, form")) return;
+  chooseFiles();
+});
 browseButton.addEventListener("click", (event) => {
   event.stopPropagation();
   chooseFiles();
@@ -192,7 +325,26 @@ fileInput.addEventListener("change", () => {
   if (file) void loadFile(file);
 });
 
-replaceButton.addEventListener("click", chooseFiles);
+urlForm.addEventListener("click", (event) => event.stopPropagation());
+urlForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  event.stopPropagation();
+  void loadRemoteImage(imageUrlInput.value);
+});
+
+replaceButton.addEventListener("click", () => {
+  selectedFile = null;
+  selectedRemoteUrl = null;
+  if (originalUrl && originalUrlIsObject) URL.revokeObjectURL(originalUrl);
+  originalUrl = null;
+  originalUrlIsObject = false;
+  clearResult();
+  previewImage.removeAttribute("src");
+  previewShell.hidden = true;
+  dropZone.hidden = false;
+  smushButton.disabled = true;
+  controlHint.textContent = "Choose an image to continue.";
+});
 
 for (const eventName of ["dragenter", "dragover"] as const) {
   dropZone.addEventListener(eventName, (event) => {
@@ -405,7 +557,7 @@ resetButton.addEventListener("click", () => {
 function setBusy(nextBusy: boolean): void {
   busy = nextBusy;
   processing.hidden = !nextBusy;
-  smushButton.disabled = nextBusy || !selectedFile;
+  smushButton.disabled = nextBusy || (!selectedFile && !selectedRemoteUrl);
   smushButton.querySelector("strong")!.textContent = nextBusy ? "Processing…" : "Convert image";
 }
 
@@ -417,28 +569,35 @@ function responseFilename(response: Response, fallback: string): string {
 
 controls.addEventListener("submit", async (event) => {
   event.preventDefault();
-  if (!selectedFile || busy) return;
+  if ((!selectedFile && !selectedRemoteUrl) || busy) return;
 
   setBusy(true);
 
   try {
     const payload = new FormData(controls);
-    payload.set("image", selectedFile, selectedFile.name);
+    const requestUrl = selectedRemoteUrl ? remoteTransformUrl(selectedRemoteUrl, payload) : null;
+    let response: Response;
 
-    const response = await fetch("/api/smush", {
-      method: "POST",
-      body: payload,
-    });
+    if (selectedFile) {
+      payload.set("image", selectedFile, selectedFile.name);
+      response = await fetch("/api/smush", {
+        method: "POST",
+        body: payload,
+      });
+    } else {
+      response = await fetch(requestUrl!);
+    }
 
     if (!response.ok) {
-      const body = (await response.json().catch(() => ({ error: "The image could not be converted." }))) as { error?: string };
-      throw new Error(body.error ?? "The image could not be converted.");
+      throw await responseError(response, "The image could not be converted.");
     }
 
     const blob = await response.blob();
     if (resultUrl) URL.revokeObjectURL(resultUrl);
     resultBlob = blob;
     resultUrl = URL.createObjectURL(blob);
+    resultTransformUrl = requestUrl;
+    copyUrlButton.hidden = !resultTransformUrl;
     resultFilename = responseFilename(response, `smushed-image.${selectedFormat() === "jpeg" ? "jpg" : selectedFormat()}`);
 
     const headerWidth = Number(response.headers.get("x-image-width"));
@@ -488,8 +647,27 @@ downloadButton.addEventListener("click", () => {
   anchor.remove();
 });
 
+copyUrlButton.addEventListener("click", async () => {
+  if (!resultTransformUrl) return;
+
+  try {
+    await navigator.clipboard.writeText(resultTransformUrl);
+    showToast("Transformed image URL copied.");
+  } catch {
+    const copyTarget = document.createElement("textarea");
+    copyTarget.value = resultTransformUrl;
+    copyTarget.style.position = "fixed";
+    copyTarget.style.opacity = "0";
+    document.body.append(copyTarget);
+    copyTarget.select();
+    document.execCommand("copy");
+    copyTarget.remove();
+    showToast("Transformed image URL copied.");
+  }
+});
+
 window.addEventListener("beforeunload", () => {
-  if (originalUrl) URL.revokeObjectURL(originalUrl);
+  if (originalUrl && originalUrlIsObject) URL.revokeObjectURL(originalUrl);
   if (resultUrl) URL.revokeObjectURL(resultUrl);
 });
 
