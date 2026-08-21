@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "bun run build && bun --watch src/index.ts",
-    "build": "bun build web/index.html --outdir public --target browser --minify",
+    "build": "bun build web/index.html web/docs.html --outdir public --target browser --minify",
     "start": "bun src/index.ts",
     "typecheck": "bunx tsc --noEmit",
     "test": "bun test"

@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="API documentation for transforming remote images and uploads with smush.lol."
+    />
+    <meta name="theme-color" content="#fff7ea" />
+    <title>API docs — smush.lol</title>
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./docs.css" />
+    <script type="module" src="./docs.ts"></script>
+  </head>
+  <body class="docs-page">
+    <div class="ambient ambient-one" aria-hidden="true"></div>
+    <div class="ambient ambient-two" aria-hidden="true"></div>
+
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="smush.lol home">
+        <span class="brand-mark" aria-hidden="true">
+          <span class="brand-face">•ᴗ•</span>
+        </span>
+        <span>smush<span class="brand-dot">.</span>lol</span>
+      </a>
+
+      <div class="header-meta">
+        <span class="runtime-pill"><span class="status-dot"></span>API docs</span>
+        <a class="tiny-link" href="/">Open editor <span aria-hidden="true">→</span></a>
+      </div>
+    </header>
+
+    <main class="docs-main">
+      <section class="docs-hero" aria-labelledby="docs-title">
+        <span class="docs-kicker">HTTP API · Bun.Image</span>
+        <h1 id="docs-title">smush.lol API</h1>
+        <p>Transform a public image URL or upload a file. No API key required.</p>
+        <div class="docs-endpoints" aria-label="Available endpoints">
+          <a href="#remote-images"><span class="method method-get">GET</span><code>/api/image</code></a>
+          <a href="#uploads"><span class="method method-post">POST</span><code>/api/smush</code></a>
+        </div>
+      </section>
+
+      <div class="docs-layout">
+        <aside class="docs-sidebar">
+          <nav aria-label="API documentation">
+            <span>On this page</span>
+            <a href="#quick-start">Quick start</a>
+            <a href="#remote-images">Remote images</a>
+            <a href="#uploads">File uploads</a>
+            <a href="#parameters">Parameters</a>
+            <a href="#response">Response</a>
+            <a href="#errors">Errors</a>
+            <a href="#limits">Limits &amp; safety</a>
+          </nav>
+          <a class="docs-editor-link" href="/">Try it in the editor <span aria-hidden="true">→</span></a>
+        </aside>
+
+        <article class="docs-content">
+          <section id="quick-start" class="docs-section">
+            <div class="docs-section-heading">
+              <span>01</span>
+              <div>
+                <h2>Quick start</h2>
+                <p>All requests use the production base URL.</p>
+              </div>
+            </div>
+
+            <div class="base-url-card">
+              <div>
+                <small>Base URL</small>
+                <code>https://smush.lol</code>
+              </div>
+              <button class="copy-button" type="button" data-copy-text="https://smush.lol">Copy</button>
+            </div>
+
+            <div class="docs-callout">
+              <strong>Authentication</strong>
+              <p>There is no API key or account. Send a request and the transformed image is returned as the response body.</p>
+            </div>
+          </section>
+
+          <section id="remote-images" class="docs-section">
+            <div class="docs-section-heading">
+              <span>02</span>
+              <div>
+                <h2>Transform a remote image</h2>
+                <p>Use a public HTTP(S) image as the source.</p>
+              </div>
+            </div>
+
+            <div class="endpoint-title">
+              <span class="method method-get">GET</span>
+              <code>/api/image</code>
+            </div>
+            <p class="docs-copy"><code>url</code> is required. Add any transform parameters to the same query string. The response is inline and can be used directly in an image element.</p>
+
+            <div class="code-panel">
+              <div class="code-panel-header"><span>HTML</span><button type="button" data-copy-target="remote-html">Copy</button></div>
+              <pre id="remote-html"><code>&lt;img
+  src="https://smush.lol/api/image?url=https%3A%2F%2Fexample.com%2Fphoto.jpg&amp;width=800&amp;format=webp&amp;quality=82"
+  alt=""
+/&gt;</code></pre>
+            </div>
+
+            <div class="code-panel">
+              <div class="code-panel-header"><span>JavaScript</span><button type="button" data-copy-target="remote-js">Copy</button></div>
+              <pre id="remote-js"><code>const image = new URL("https://smush.lol/api/image");
+image.searchParams.set("url", "https://example.com/photo.jpg");
+image.searchParams.set("width", "800");
+image.searchParams.set("format", "webp");
+image.searchParams.set("quality", "82");
+
+document.querySelector("img").src = image.toString();</code></pre>
+            </div>
+
+            <div class="docs-callout docs-callout-blue">
+              <strong>Remote response caching</strong>
+              <p>Remote transformations return <code>Cache-Control: public, max-age=3600, stale-while-revalidate=86400</code>.</p>
+            </div>
+          </section>
+
+          <section id="uploads" class="docs-section">
+            <div class="docs-section-heading">
+              <span>03</span>
+              <div>
+                <h2>Transform an upload</h2>
+                <p>Send a multipart form with an <code>image</code> file.</p>
+              </div>
+            </div>
+
+            <div class="endpoint-title">
+              <span class="method method-post">POST</span>
+              <code>/api/smush</code>
+            </div>
+
+            <div class="code-panel">
+              <div class="code-panel-header"><span>cURL</span><button type="button" data-copy-target="upload-curl">Copy</button></div>
+              <pre id="upload-curl"><code>curl https://smush.lol/api/smush \
+  -F "image=@photo.jpg" \
+  -F "width=800" \
+  -F "format=webp" \
+  -F "quality=82" \
+  --output photo-smushed.webp</code></pre>
+            </div>
+
+            <div class="code-panel">
+              <div class="code-panel-header"><span>JavaScript</span><button type="button" data-copy-target="upload-js">Copy</button></div>
+              <pre id="upload-js"><code>const body = new FormData();
+body.set("image", file);
+body.set("width", "800");
+body.set("format", "webp");
+body.set("quality", "82");
+
+const response = await fetch("https://smush.lol/api/smush", {
+  method: "POST",
+  body,
+});
+
+const result = await response.blob();</code></pre>
+            </div>
+
+            <div class="docs-callout">
+              <strong>Upload responses</strong>
+              <p>Uploads use <code>Content-Disposition: attachment</code> and <code>Cache-Control: no-store</code>.</p>
+            </div>
+          </section>
+
+          <section id="parameters" class="docs-section">
+            <div class="docs-section-heading">
+              <span>04</span>
+              <div>
+                <h2>Transform parameters</h2>
+                <p>The same fields work with both endpoints.</p>
+              </div>
+            </div>
+
+            <div class="docs-table-wrap">
+              <table class="docs-table">
+                <thead>
+                  <tr><th>Parameter</th><th>Accepted values</th><th>Default</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td><code>width</code></td><td>1–12,000 pixels</td><td>Source width</td></tr>
+                  <tr><td><code>height</code></td><td>1–12,000 pixels</td><td>Source height</td></tr>
+                  <tr><td><code>fit</code></td><td><code>inside</code>, <code>fill</code></td><td><code>inside</code></td></tr>
+                  <tr><td><code>filter</code></td><td><code>lanczos3</code>, <code>lanczos2</code>, <code>mitchell</code>, <code>cubic</code>, <code>mks2013</code>, <code>mks2021</code>, <code>bilinear</code>, <code>linear</code>, <code>box</code>, <code>nearest</code></td><td><code>lanczos3</code></td></tr>
+                  <tr><td><code>withoutEnlargement</code></td><td><code>true</code>, <code>1</code>, <code>on</code></td><td><code>false</code></td></tr>
+                  <tr><td><code>rotate</code></td><td><code>0</code>, <code>90</code>, <code>180</code>, <code>270</code></td><td><code>0</code></td></tr>
+                  <tr><td><code>flip</code></td><td>Boolean; vertical flip</td><td><code>false</code></td></tr>
+                  <tr><td><code>flop</code></td><td>Boolean; horizontal flip</td><td><code>false</code></td></tr>
+                  <tr><td><code>brightness</code></td><td>0–3</td><td><code>1</code></td></tr>
+                  <tr><td><code>saturation</code></td><td>0–3</td><td><code>1</code></td></tr>
+                  <tr><td><code>format</code></td><td><code>webp</code>, <code>jpeg</code>, <code>png</code></td><td><code>webp</code></td></tr>
+                  <tr><td><code>quality</code></td><td>1–100; WebP and JPEG</td><td><code>82</code></td></tr>
+                  <tr><td><code>lossless</code></td><td>Boolean; WebP only</td><td><code>false</code></td></tr>
+                  <tr><td><code>progressive</code></td><td>Boolean; JPEG only</td><td><code>false</code></td></tr>
+                  <tr><td><code>compressionLevel</code></td><td>0–9; PNG only</td><td><code>6</code></td></tr>
+                  <tr><td><code>palette</code></td><td>Boolean; PNG only</td><td><code>false</code></td></tr>
+                  <tr><td><code>colors</code></td><td>2–256; PNG palette</td><td><code>128</code></td></tr>
+                  <tr><td><code>dither</code></td><td>Boolean; PNG palette</td><td><code>false</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <p class="docs-footnote">When only one dimension is supplied, the source aspect ratio is preserved. With both dimensions and <code>fit=inside</code>, the image is contained within the requested box.</p>
+          </section>
+
+          <section id="response" class="docs-section">
+            <div class="docs-section-heading">
+              <span>05</span>
+              <div>
+                <h2>Response</h2>
+                <p>A successful request returns the encoded image body.</p>
+              </div>
+            </div>
+
+            <div class="response-grid">
+              <div><code>Content-Type</code><span>Output image MIME type</span></div>
+              <div><code>Content-Length</code><span>Output size in bytes</span></div>
+              <div><code>Content-Disposition</code><span>Safe generated filename</span></div>
+              <div><code>X-Image-Width</code><span>Output width</span></div>
+              <div><code>X-Image-Height</code><span>Output height</span></div>
+              <div><code>X-Image-Format</code><span>Requested output format</span></div>
+              <div><code>X-Original-Format</code><span>Detected source format</span></div>
+              <div><code>X-Bun-Version</code><span>Processing runtime version</span></div>
+            </div>
+          </section>
+
+          <section id="errors" class="docs-section">
+            <div class="docs-section-heading">
+              <span>06</span>
+              <div>
+                <h2>Errors</h2>
+                <p>Errors are returned as JSON with an <code>error</code> message.</p>
+              </div>
+            </div>
+
+            <div class="code-panel">
+              <div class="code-panel-header"><span>JSON</span></div>
+              <pre><code>{ "error": "The URL did not return an image." }</code></pre>
+            </div>
+
+            <div class="status-list">
+              <div><strong>400</strong><span>Missing or malformed input</span></div>
+              <div><strong>403</strong><span>Private or blocked source URL</span></div>
+              <div><strong>413</strong><span>Source or output is too large</span></div>
+              <div><strong>415</strong><span>Remote response is not an image</span></div>
+              <div><strong>422</strong><span>Image decode or transform failed</span></div>
+              <div><strong>502</strong><span>Remote host failed, timed out, or redirected too often</span></div>
+            </div>
+          </section>
+
+          <section id="limits" class="docs-section">
+            <div class="docs-section-heading">
+              <span>07</span>
+              <div>
+                <h2>Limits &amp; safety</h2>
+                <p>Requests are bounded to keep the public API predictable.</p>
+              </div>
+            </div>
+
+            <ul class="limits-list">
+              <li><strong>15 MB</strong><span>Maximum upload or remote source size</span></li>
+              <li><strong>48 MP</strong><span>Maximum decoded image and output area</span></li>
+              <li><strong>12,000 px</strong><span>Maximum width or height</span></li>
+              <li><strong>10 seconds</strong><span>Remote source timeout</span></li>
+              <li><strong>3 redirects</strong><span>Each destination is validated again</span></li>
+            </ul>
+
+            <div class="docs-callout docs-callout-peach">
+              <strong>Remote source rules</strong>
+              <p>Only public HTTP(S) URLs on standard web ports are accepted. Credentials, localhost, private networks, and non-web protocols are blocked. Images are processed in memory and are not stored by the application.</p>
+            </div>
+          </section>
+        </article>
+      </div>
+    </main>
+
+    <footer>
+      <a class="brand footer-brand" href="/">
+        <span class="brand-mark mini" aria-hidden="true"><span class="brand-face">•ᴗ•</span></span>
+        <span>smush<span class="brand-dot">.</span>lol</span>
+      </a>
+      <p>API powered by Bun.Image and Elysia.</p>
+      <div class="footer-links">
+        <a href="/">Editor</a>
+        <a href="https://github.com/nearbycoder/smush.lol" target="_blank" rel="noreferrer">Source ↗</a>
+      </div>
+    </footer>
+
+    <div id="docs-toast" class="toast" role="status" aria-live="polite" hidden></div>
+  </body>
+</html>

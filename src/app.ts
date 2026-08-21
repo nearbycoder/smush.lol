@@ -81,6 +81,16 @@ function handleImageError(error: unknown, set: { status?: number | string }): { 
   return { error: message };
 }
 
+function docsPage(): Response {
+  return new Response(Bun.file("public/docs.html"), {
+    headers: {
+      "Cache-Control": "public, max-age=3600",
+      "Content-Type": "text/html; charset=utf-8",
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
+}
+
 export const app = new Elysia({
   serve: {
     maxRequestBodySize: MAX_FILE_BYTES + 1024 * 1024,
@@ -91,6 +101,7 @@ export const app = new Elysia({
     runtime: "bun",
     version: Bun.version,
   }))
+  .get("/docs", docsPage)
   .get(
     "/api/image",
     async ({ query, set }) => {

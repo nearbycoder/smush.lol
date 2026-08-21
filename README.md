@@ -48,6 +48,8 @@ bun run build
 
 ## API
 
+The complete browser-friendly API reference is available at [smush.lol/docs](https://smush.lol/docs).
+
 ### Transform a remote image
 
 `GET /api/image` accepts a public HTTP(S) image URL and transform options as query parameters. The response is an inline image suitable for an `<img>` tag:
