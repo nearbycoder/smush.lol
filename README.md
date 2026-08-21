@@ -1,6 +1,27 @@
-# smush.lol
+<p align="center">
+  <a href="https://smush.lol">
+    <img src=".github/assets/logo.svg" width="420" alt="smush.lol" />
+  </a>
+</p>
 
-A cheerful, no-account image workbench powered by [Bun.Image](https://bun.com/docs/runtime/image) and [Elysia](https://elysiajs.com/). Resize, rotate, flip, recolor, and convert images without Sharp or a native add-on.
+<p align="center">
+  <strong>A cheerful, no-account image workbench powered by Bun.Image.</strong><br />
+  Resize, transform, and convert images without Sharp or a native add-on.
+</p>
+
+<p align="center">
+  <a href="https://smush.lol"><strong>Open the app</strong></a>
+  &nbsp;·&nbsp;
+  <a href="https://smush.lol/docs">API docs</a>
+  &nbsp;·&nbsp;
+  <a href="https://bun.com/docs/runtime/image">Bun.Image</a>
+</p>
+
+<p align="center">
+  <a href="https://smush.lol">
+    <img src=".github/assets/editor.jpg" width="100%" alt="The smush.lol image editor with drag-and-drop upload and transformation settings" />
+  </a>
+</p>
 
 ## What it can do
 
@@ -49,6 +70,12 @@ bun run build
 ## API
 
 The complete browser-friendly API reference is available at [smush.lol/docs](https://smush.lol/docs).
+
+<p align="center">
+  <a href="https://smush.lol/docs">
+    <img src=".github/assets/api-docs.jpg" width="100%" alt="The smush.lol API documentation with remote image and file upload endpoints" />
+  </a>
+</p>
 
 ### Transform a remote image
 
