@@ -769,9 +769,11 @@ footer {
 }
 
 .control-group legend {
+  position: relative;
+  top: 6px;
   display: flex;
   width: calc(100% + 2px);
-  margin: 0 0 10px -1px;
+  margin: 0 0 16px -1px;
   padding: 0;
   align-items: center;
   gap: 9px;
