@@ -84,3 +84,16 @@ describe("smush API", () => {
     expect(await response.json()).toEqual({ error: "Private network image URLs are not allowed." });
   });
 });
+
+test("rejects invalid dimensions before fetching a remote image", async () => {
+  const originalFetch = globalThis.fetch;
+  let fetches = 0;
+  globalThis.fetch = (async () => { fetches++; return new Response(onePixelPng); }) as unknown as typeof fetch;
+  try {
+    const response = await app.handle(new Request("http://localhost/api/image?url=https://8.8.8.8/pixel.png&width=12001"));
+    expect(response.status).toBe(422);
+    expect(fetches).toBe(0);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});

@@ -6,6 +6,7 @@ import {
   errorMessage,
   MAX_FILE_BYTES,
   parseTransformSettings,
+  type TransformSettings,
 } from "./transform";
 
 const imageTypes = [
@@ -41,15 +42,12 @@ const transformFieldSchema = {
   dither: t.Optional(t.String()),
 };
 
-type TransformFields = Record<string, FormDataEntryValue | undefined>;
-
 async function imageResponse(
   bytes: ArrayBuffer | Uint8Array,
   inputName: string,
-  fields: TransformFields,
+  settings: TransformSettings,
   options: { cacheControl: string; disposition: "attachment" | "inline" },
 ): Promise<Response> {
-  const settings = parseTransformSettings(fields);
   const result = await transformImage(bytes, inputName, settings);
 
   return new Response(result.output, {
@@ -108,8 +106,9 @@ export const app = new Elysia({
       const { url, ...fields } = query;
 
       try {
+        const settings = parseTransformSettings(fields);
         const remote = await fetchRemoteImage(url);
-        return await imageResponse(remote.bytes, remote.filename, fields, {
+        return await imageResponse(remote.bytes, remote.filename, settings, {
           cacheControl: "public, max-age=3600, stale-while-revalidate=86400",
           disposition: "inline",
         });
@@ -130,8 +129,9 @@ export const app = new Elysia({
       const { image, ...fields } = body;
 
       try {
+        const settings = parseTransformSettings(fields);
         const bytes = await image.arrayBuffer();
-        return await imageResponse(bytes, image.name, fields, {
+        return await imageResponse(bytes, image.name, settings, {
           cacheControl: "no-store",
           disposition: "attachment",
         });

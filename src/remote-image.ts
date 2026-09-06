@@ -159,16 +159,14 @@ async function readLimitedBody(response: Response): Promise<Uint8Array> {
   return bytes;
 }
 
-export async function fetchRemoteImage(source: string) {
+export async function fetchRemoteImage(source: string, timeoutMs = FETCH_TIMEOUT_MS) {
   let url = await assertSafeRemoteUrl(source);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
-  for (let redirects = 0; redirects <= MAX_REDIRECTS; redirects += 1) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-    let response: Response;
-
-    try {
-      response = await fetch(url, {
+  try {
+    for (let redirects = 0; redirects <= MAX_REDIRECTS; redirects += 1) {
+      const response = await fetch(url, {
         headers: {
           Accept: "image/avif,image/webp,image/png,image/jpeg,image/*;q=0.8",
           "User-Agent": "smush.lol/1.0 image transformer",
@@ -176,45 +174,47 @@ export async function fetchRemoteImage(source: string) {
         redirect: "manual",
         signal: controller.signal,
       });
-    } catch (error) {
-      if (error instanceof RemoteImageError) throw error;
-      const message = error instanceof Error && error.name === "AbortError"
-        ? "The image host took too long to respond."
-        : "The image could not be fetched from its host.";
-      throw new RemoteImageError(message, 502);
-    } finally {
-      clearTimeout(timeout);
-    }
 
-    if (response.status >= 300 && response.status < 400) {
-      const location = response.headers.get("location");
-      if (!location || redirects === MAX_REDIRECTS) {
-        throw new RemoteImageError("The image URL redirected too many times.", 502);
+      try {
+        if (response.status >= 300 && response.status < 400) {
+          const location = response.headers.get("location");
+          if (!location || redirects === MAX_REDIRECTS) {
+            throw new RemoteImageError("The image URL redirected too many times.", 502);
+          }
+          url = await assertSafeRemoteUrl(new URL(location, url));
+          continue;
+        }
+        if (!response.ok) {
+          throw new RemoteImageError(`The image host returned HTTP ${response.status}.`, 502);
+        }
+        const contentLength = Number(response.headers.get("content-length"));
+        if (Number.isFinite(contentLength) && contentLength > MAX_FILE_BYTES) {
+          throw new RemoteImageError("The remote image must be 15 MB or smaller.", 413);
+        }
+        const contentType = response.headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase();
+        if (contentType && !contentType.startsWith("image/") && contentType !== "application/octet-stream") {
+          throw new RemoteImageError("The URL did not return an image.", 415);
+        }
+        return {
+          bytes: await readLimitedBody(response),
+          filename: filenameFromUrl(url),
+          sourceUrl: url,
+        };
+      } finally {
+        // Release unread bodies on redirects and rejected responses, too.
+        await response.body?.cancel().catch(() => {});
       }
-      url = await assertSafeRemoteUrl(new URL(location, url));
-      continue;
     }
-
-    if (!response.ok) {
-      throw new RemoteImageError(`The image host returned HTTP ${response.status}.`, 502);
-    }
-
-    const contentLength = Number(response.headers.get("content-length"));
-    if (Number.isFinite(contentLength) && contentLength > MAX_FILE_BYTES) {
-      throw new RemoteImageError("The remote image must be 15 MB or smaller.", 413);
-    }
-
-    const contentType = response.headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase();
-    if (contentType && !contentType.startsWith("image/") && contentType !== "application/octet-stream") {
-      throw new RemoteImageError("The URL did not return an image.", 415);
-    }
-
-    return {
-      bytes: await readLimitedBody(response),
-      filename: filenameFromUrl(url),
-      sourceUrl: url,
-    };
+    throw new RemoteImageError("The image URL redirected too many times.", 502);
+  } catch (error) {
+    if (error instanceof RemoteImageError) throw error;
+    throw new RemoteImageError(
+      controller.signal.aborted
+        ? "The image host took too long to respond."
+        : "The image could not be fetched from its host.",
+      502,
+    );
+  } finally {
+    clearTimeout(timeout);
   }
-
-  throw new RemoteImageError("The image URL redirected too many times.", 502);
 }

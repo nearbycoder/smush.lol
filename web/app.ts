@@ -1,3 +1,5 @@
+import { LatestRequest, responseDimensions } from "./requests";
+
 const MAX_FILE_BYTES = 15 * 1024 * 1024;
 
 function byId<T extends HTMLElement>(id: string): T {
@@ -74,6 +76,9 @@ let outputInfo: ImageInfo | null = null;
 let currentView: "original" | "result" = "original";
 let ratioLocked = true;
 let busy = false;
+const sourceRequest = new LatestRequest();
+const conversionRequest = new LatestRequest();
+let resultSettings: string | null = null;
 let toastTimer: number | undefined;
 
 function formatBytes(bytes: number): string {
@@ -101,8 +106,8 @@ function isSupportedImage(file: File): boolean {
   return file.type.startsWith("image/") || /\.(jpe?g|png|webp|gif|bmp|heic|heif|avif|tiff?)$/i.test(file.name);
 }
 
-async function getImageDimensions(blob: Blob): Promise<{ width: number; height: number }> {
-  const url = URL.createObjectURL(blob);
+async function getImageDimensions(blob: Blob, existingUrl?: string): Promise<{ width: number; height: number }> {
+  const url = existingUrl ?? URL.createObjectURL(blob);
   const image = new Image();
   image.src = url;
 
@@ -110,7 +115,7 @@ async function getImageDimensions(blob: Blob): Promise<{ width: number; height: 
     await image.decode();
     return { width: image.naturalWidth, height: image.naturalHeight };
   } finally {
-    URL.revokeObjectURL(url);
+    if (!existingUrl) URL.revokeObjectURL(url);
   }
 }
 
@@ -118,6 +123,7 @@ function clearResult(): void {
   if (resultUrl) URL.revokeObjectURL(resultUrl);
   resultUrl = null;
   resultBlob = null;
+  resultSettings = null;
   resultTransformUrl = null;
   outputInfo = null;
   resultTab.disabled = true;
@@ -162,6 +168,11 @@ async function loadFile(file: File): Promise<void> {
     return;
   }
 
+  const signal = sourceRequest.start();
+  conversionRequest.cancel();
+  setBusy(false);
+  urlButton.disabled = false;
+  urlButton.textContent = "Load";
   selectedFile = file;
   selectedRemoteUrl = null;
   setOriginalUrl(URL.createObjectURL(file), true);
@@ -175,10 +186,12 @@ async function loadFile(file: File): Promise<void> {
   };
 
   try {
-    const dimensions = await getImageDimensions(file);
+    const dimensions = await getImageDimensions(file, originalUrl!);
+    if (signal.aborted) return;
     sourceInfo.width = dimensions.width;
     sourceInfo.height = dimensions.height;
   } catch {
+    if (signal.aborted) return;
     showToast("This format cannot be previewed in your browser. Bun.Image may still support it.");
   }
 
@@ -268,16 +281,20 @@ async function loadRemoteImage(value: string): Promise<void> {
     return;
   }
 
+  const signal = sourceRequest.start();
+  conversionRequest.cancel();
+  setBusy(false);
   urlButton.disabled = true;
   urlButton.textContent = "Loading…";
 
   try {
-    const response = await fetch(remoteTransformUrl(source));
+    const response = await fetch(remoteTransformUrl(source), { signal });
     if (!response.ok) throw await responseError(response, "The remote image could not be loaded.");
 
     const blob = await response.blob();
+    const dimensions = responseDimensions(response) ?? await getImageDimensions(blob).catch(() => ({ width: 0, height: 0 }));
+    if (signal.aborted) return;
     const previewUrl = URL.createObjectURL(blob);
-    const dimensions = await getImageDimensions(blob).catch(() => ({ width: 0, height: 0 }));
 
     selectedFile = null;
     selectedRemoteUrl = source;
@@ -298,10 +315,12 @@ async function loadRemoteImage(value: string): Promise<void> {
     resetControls();
     setView("original");
   } catch (error) {
-    showToast(error instanceof Error ? error.message : "The remote image could not be loaded.", true);
+    if (!signal.aborted) showToast(error instanceof Error ? error.message : "The remote image could not be loaded.", true);
   } finally {
-    urlButton.disabled = false;
-    urlButton.textContent = "Load";
+    if (!signal.aborted) {
+      urlButton.disabled = false;
+      urlButton.textContent = "Load";
+    }
   }
 }
 
@@ -333,6 +352,9 @@ urlForm.addEventListener("submit", (event) => {
 });
 
 replaceButton.addEventListener("click", () => {
+  sourceRequest.cancel();
+  conversionRequest.cancel();
+  setBusy(false);
   selectedFile = null;
   selectedRemoteUrl = null;
   if (originalUrl && originalUrlIsObject) URL.revokeObjectURL(originalUrl);
@@ -571,10 +593,17 @@ controls.addEventListener("submit", async (event) => {
   event.preventDefault();
   if ((!selectedFile && !selectedRemoteUrl) || busy) return;
 
+  const payload = new FormData(controls);
+  const settingsKey = new URLSearchParams(Array.from(payload.entries()).filter((entry): entry is [string, string] => typeof entry[1] === "string")).toString();
+  if (resultSettings === settingsKey && resultBlob) {
+    setView("result");
+    showToast("These settings are already converted. Your result is ready.");
+    return;
+  }
+  const signal = conversionRequest.start();
   setBusy(true);
 
   try {
-    const payload = new FormData(controls);
     const requestUrl = selectedRemoteUrl ? remoteTransformUrl(selectedRemoteUrl, payload) : null;
     let response: Response;
 
@@ -583,9 +612,10 @@ controls.addEventListener("submit", async (event) => {
       response = await fetch("/api/smush", {
         method: "POST",
         body: payload,
+        signal,
       });
     } else {
-      response = await fetch(requestUrl!);
+      response = await fetch(requestUrl!, { signal });
     }
 
     if (!response.ok) {
@@ -593,19 +623,15 @@ controls.addEventListener("submit", async (event) => {
     }
 
     const blob = await response.blob();
+    const dimensions = responseDimensions(response) ?? await getImageDimensions(blob).catch(() => ({ width: 0, height: 0 }));
+    if (signal.aborted) return;
+    resultSettings = settingsKey;
     if (resultUrl) URL.revokeObjectURL(resultUrl);
     resultBlob = blob;
     resultUrl = URL.createObjectURL(blob);
     resultTransformUrl = requestUrl;
     copyUrlButton.hidden = !resultTransformUrl;
     resultFilename = responseFilename(response, `smushed-image.${selectedFormat() === "jpeg" ? "jpg" : selectedFormat()}`);
-
-    const headerWidth = Number(response.headers.get("x-image-width"));
-    const headerHeight = Number(response.headers.get("x-image-height"));
-    let dimensions = { width: headerWidth, height: headerHeight };
-    if (!dimensions.width || !dimensions.height || dimensions.width < 0 || dimensions.height < 0) {
-      dimensions = await getImageDimensions(blob).catch(() => ({ width: 0, height: 0 }));
-    }
 
     outputInfo = {
       width: dimensions.width,
@@ -631,9 +657,9 @@ controls.addEventListener("submit", async (event) => {
     setView("result");
     showToast(`Image converted with Bun ${response.headers.get("x-bun-version") ?? "1.4"}.`);
   } catch (error) {
-    showToast(error instanceof Error ? error.message : "The image could not be converted.", true);
+    if (!signal.aborted) showToast(error instanceof Error ? error.message : "The image could not be converted.", true);
   } finally {
-    setBusy(false);
+    if (!signal.aborted) setBusy(false);
   }
 });
 
