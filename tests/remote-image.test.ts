@@ -65,3 +65,36 @@ describe("remote image safety", () => {
     }
   });
 });
+
+test("keeps the timeout active while reading a stalled image body", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async (_url: unknown, options?: RequestInit) => new Response(new ReadableStream({
+    start(controller) {
+      options?.signal?.addEventListener("abort", () => {
+        controller.error(new DOMException("Aborted", "AbortError"));
+      }, { once: true });
+      controller.enqueue(new Uint8Array([1]));
+    },
+  }), { headers: { "Content-Type": "image/png" } })) as unknown as typeof fetch;
+  try {
+    await expect(fetchRemoteImage("https://8.8.8.8/slow.png", 20)).rejects.toMatchObject({
+      status: 502, message: "The image host took too long to respond.",
+    });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("cancels rejected response bodies instead of downloading them", async () => {
+  const originalFetch = globalThis.fetch;
+  let cancelled = false;
+  globalThis.fetch = (async () => new Response(new ReadableStream({
+    cancel() { cancelled = true; },
+  }), { headers: { "Content-Type": "text/html" } })) as unknown as typeof fetch;
+  try {
+    await expect(fetchRemoteImage("https://8.8.8.8/page")).rejects.toMatchObject({ status: 415 });
+    expect(cancelled).toBe(true);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
