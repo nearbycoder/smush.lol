@@ -5,6 +5,7 @@ import { fetchRemoteImage, RemoteImageError } from "./remote-image";
 import {
   errorMessage,
   MAX_FILE_BYTES,
+  MAX_PIXELS,
   parseTransformSettings,
   type TransformSettings,
 } from "./transform";
@@ -102,6 +103,22 @@ export const app = new Elysia({
     version: Bun.version,
   }))
   .get("/docs", docsPage)
+  .get("/api/source", async ({ query, set }) => {
+    try {
+      const remote = await fetchRemoteImage(query.url);
+      const metadata = await new Bun.Image(remote.bytes, { autoOrient: true, maxPixels: MAX_PIXELS }).metadata();
+      const type = metadata.format;
+      return new Response(new Uint8Array(remote.bytes), { headers: {
+        "Content-Type": `image/${type}`,
+        "Content-Length": String(remote.bytes.byteLength),
+        "Content-Disposition": `attachment; filename="${remote.filename.replace(/[^a-zA-Z0-9._-]/g, "_")}"`,
+        "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff",
+        "X-Image-Width": String(metadata.width),
+        "X-Image-Height": String(metadata.height),
+      } });
+    } catch (error) { return handleImageError(error, set); }
+  }, { query: t.Object({ url: t.String({ minLength: 1, maxLength: 4096 }) }) })
   .get(
     "/api/image",
     async ({ query, set }) => {
@@ -155,7 +172,7 @@ export const app = new Elysia({
     if (code === "VALIDATION") {
       set.status = 400;
       return {
-        error: path === "/api/image"
+        error: (path === "/api/image" || path === "/api/source")
           ? "A public HTTP(S) image URL is required."
           : "Please choose a supported image under 15 MB.",
       };

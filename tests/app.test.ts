@@ -97,3 +97,17 @@ test("rejects invalid dimensions before fetching a remote image", async () => {
     globalThis.fetch = originalFetch;
   }
 });
+
+test("remote source previews return original bytes without a lossy conversion", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async () => new Response(onePixelPng, { headers: { "Content-Type": "image/png" } })) as unknown as typeof fetch;
+  try {
+    const response = await app.handle(new Request("http://localhost/api/source?url=https://8.8.8.8/source.png"));
+    expect(response.status).toBe(200);
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    expect(response.headers.get("content-type")).toBe("image/png");
+    expect(new Uint8Array(await response.arrayBuffer())).toEqual(onePixelPng);
+    const blocked = await app.handle(new Request("http://localhost/api/source?url=http://127.0.0.1/private.png"));
+    expect(blocked.status).toBe(403);
+  } finally { globalThis.fetch = originalFetch; }
+});

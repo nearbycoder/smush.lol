@@ -1,3 +1,4 @@
+import { prepareImage } from "./prepare-image";
 export type ExportFields = Record<string, string>;
 export interface ExportResult { blob: Blob; filename: string }
 export interface QueueJob {
@@ -113,6 +114,7 @@ export function formFields(form: HTMLFormElement): ExportFields {
 }
 
 export async function convertFile(file: File, fields: ExportFields, signal: AbortSignal): Promise<ExportResult> {
+  file = await prepareImage(file, fields, signal);
   const body = new FormData();
   for (const [key, value] of Object.entries(fields)) body.set(key, value);
   body.set("image", file, file.name);

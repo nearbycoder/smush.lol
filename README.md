@@ -29,6 +29,8 @@
 - Download completed results in a ZIP with unique filenames; clear the queue to release images
 - Drag, browse, paste, load a public image URL, or start with a generated demo image
 - Resize up to 12,000px per side with Bun's native resampling kernels
+- Crop to square, portrait, widescreen, original, or custom ratios; drag or use sliders to position the crop
+- Fill transparent pixels with a chosen background color when exporting JPEG
 - Rotate, flip horizontally or vertically, and adjust brightness/saturation
 - Export WebP, progressive JPEG, or PNG
 - Start with Web, Email, or Lossless export presets
@@ -132,6 +134,8 @@ Railway will provide two DNS records:
 2. A TXT ownership-verification record
 
 Add both records at the DNS host. For an apex domain, the provider must support CNAME flattening, ALIAS, or ANAME; Railway does not publish a static IP for an A record. Requests will return 404 until the TXT verification succeeds.
+
+Cropping and JPEG background fill use the browser canvas before uploading a lossless PNG to Bun.Image. They require a browser-decodable source and apply before server resize/rotation. Prepared uploads retain the 15 MB limit. Queue crops use the same ratio and relative position on each image. `/api/source` fetches validated original bytes for remote-image previews using the same URL restrictions; it returns `no-store` responses. Browser crop/background settings are not part of reusable transform URLs.
 
 ## Privacy model
 
