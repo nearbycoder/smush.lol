@@ -1,3 +1,4 @@
+import { browserFields } from "./crop-geometry";
 import { parseTransformSettings } from "../src/transform";
 
 export const exportPresets = {
@@ -18,7 +19,7 @@ export function savedSettings(fields: Record<string, string>, ratioLocked: boole
   const settings = parseTransformSettings(fields);
   return {
     version: 1,
-    fields: Object.fromEntries(Object.entries(settings).map(([key, value]) => [key, value === undefined ? "" : String(value)])),
+    fields: { ...Object.fromEntries(Object.entries(settings).map(([key, value]) => [key, value === undefined ? "" : String(value)])), ...browserFields(fields) },
     ratioLocked,
   };
 }

@@ -1,3 +1,7 @@
+import { mountCropEditor } from "./crop-editor";
+import { cropRect } from "./crop-geometry";
+import { needsPreparation, prepareImage } from "./prepare-image";
+import { formFields } from "./queue";
 import { mountQueue } from "./queue-panel";
 import { LatestRequest, responseDimensions } from "./requests";
 import { exportPresets, readSavedSettings, savedSettings, SETTINGS_KEY } from "./settings";
@@ -78,6 +82,7 @@ interface ImageInfo {
 
 let selectedFile: File | null = null;
 let selectedRemoteUrl: string | null = null;
+let remoteSourceFile: File | null = null;
 let originalUrl: string | null = null;
 let originalUrlIsObject = false;
 let resultUrl: string | null = null;
@@ -101,6 +106,16 @@ function formatBytes(bytes: number): string {
 }
 
 const queue = mountQueue(controls, showToast);
+const cropEditor = mountCropEditor(() => originalUrl, showToast, updateCropSummary);
+function updateCropSummary(): void {
+  const cropped = Boolean(formFields(controls).cropRatio);
+  const rect = sourceInfo.width ? cropRect(sourceInfo.width, sourceInfo.height, formFields(controls)) : null;
+  byId("crop-summary").textContent = cropped
+    ? `Crop applied${rect ? `: ${rect.width} × ${rect.height}px` : ""}. Queue images use the same ratio and relative position.`
+    : "No crop. Cropping happens before resize and rotation.";
+  byId<HTMLButtonElement>("crop-remove").disabled = !cropped;
+}
+byId("background-enabled").addEventListener("change", updateFormatSettings);
 
 function acceptFiles(files: File[], queueOnly = false): void {
   if (!files.length) return;
@@ -111,7 +126,7 @@ function acceptFiles(files: File[], queueOnly = false): void {
     try { queue.add(valid); showToast(`${valid.length} images added. Choose settings, then convert the queue.`); }
     catch (error) { showToast(error instanceof Error ? error.message : "Could not add images.", true); return; }
   }
-  if (!queueOnly) void loadFile(valid[0]!);
+  if (!queueOnly || (!selectedFile && !selectedRemoteUrl)) void loadFile(valid[0]!);
 }
 
 const queueInput = byId<HTMLInputElement>("queue-input");
@@ -226,6 +241,7 @@ async function loadFile(file: File): Promise<void> {
     return;
   }
 
+  cropEditor.sourceChanged();
   const signal = sourceRequest.start();
   conversionRequest.cancel();
   setBusy(false);
@@ -233,6 +249,7 @@ async function loadFile(file: File): Promise<void> {
   urlButton.textContent = "Load";
   selectedFile = file;
   selectedRemoteUrl = null;
+  remoteSourceFile = null;
   setOriginalUrl(URL.createObjectURL(file), true);
   clearResult();
 
@@ -257,6 +274,7 @@ async function loadFile(file: File): Promise<void> {
   dropZone.hidden = true;
   previewShell.hidden = false;
   smushButton.disabled = false;
+  updateCropSummary();
   controlHint.textContent = "Ready to convert. The original file will not be changed.";
   setView("original");
 }
@@ -339,6 +357,7 @@ async function loadRemoteImage(value: string): Promise<void> {
     return;
   }
 
+  cropEditor.sourceChanged();
   const signal = sourceRequest.start();
   conversionRequest.cancel();
   setBusy(false);
@@ -346,7 +365,7 @@ async function loadRemoteImage(value: string): Promise<void> {
   urlButton.textContent = "Loading…";
 
   try {
-    const response = await fetch(remoteTransformUrl(source), { signal });
+    const response = await fetch(`/api/source?${new URLSearchParams({ url: source })}`, { signal });
     if (!response.ok) throw await responseError(response, "The remote image could not be loaded.");
 
     const blob = await response.blob();
@@ -356,19 +375,21 @@ async function loadRemoteImage(value: string): Promise<void> {
 
     selectedFile = null;
     selectedRemoteUrl = source;
+    remoteSourceFile = new File([blob], responseFilename(response, "remote-image"), { type: blob.type });
     setOriginalUrl(previewUrl, true);
     clearResult();
     sourceInfo = {
       width: dimensions.width,
       height: dimensions.height,
-      size: 0,
-      type: "remote",
+      size: blob.size,
+      type: blob.type,
     };
 
     sourceName.textContent = remoteDisplayName(source);
     dropZone.hidden = true;
     previewShell.hidden = false;
     smushButton.disabled = false;
+    updateCropSummary();
     controlHint.textContent = "Ready to convert from the source URL.";
     setView("original");
   } catch (error) {
@@ -408,6 +429,8 @@ urlForm.addEventListener("submit", (event) => {
 });
 
 replaceButton.addEventListener("click", () => {
+  cropEditor.sourceChanged();
+  remoteSourceFile = null;
   sourceRequest.cancel();
   conversionRequest.cancel();
   setBusy(false);
@@ -510,7 +533,9 @@ lockRatioButton.addEventListener("click", () => {
 });
 
 function sourceRatio(): number | null {
-  return sourceInfo.width > 0 && sourceInfo.height > 0 ? sourceInfo.width / sourceInfo.height : null;
+  if (!sourceInfo.width || !sourceInfo.height) return null;
+  const rect = cropRect(sourceInfo.width, sourceInfo.height, formFields(controls));
+  return rect.width / rect.height;
 }
 
 widthInput.addEventListener("input", () => {
@@ -532,11 +557,12 @@ document.querySelectorAll<HTMLButtonElement>("[data-scale], [data-max-width]").f
       return;
     }
 
+    const cropped = cropRect(sourceInfo.width, sourceInfo.height, formFields(controls));
     const scale = button.dataset.scale ? Number(button.dataset.scale) : null;
     const maxWidth = button.dataset.maxWidth ? Number(button.dataset.maxWidth) : null;
-    const width = scale ? Math.round(sourceInfo.width * scale) : Math.min(sourceInfo.width, maxWidth ?? sourceInfo.width);
+    const width = scale ? Math.round(cropped.width * scale) : Math.min(cropped.width, maxWidth ?? cropped.width);
     widthInput.value = String(width);
-    heightInput.value = String(Math.max(1, Math.round((width / sourceInfo.width) * sourceInfo.height)));
+    heightInput.value = String(Math.max(1, Math.round((width / cropped.width) * cropped.height)));
   });
 });
 
@@ -590,6 +616,8 @@ function selectedFormat(): "webp" | "jpeg" | "png" {
 
 function updateFormatSettings(): void {
   const format = selectedFormat();
+  byId("background-settings").hidden = format !== "jpeg";
+  byId<HTMLInputElement>("background-color").disabled = format !== "jpeg" || !byId<HTMLInputElement>("background-enabled").checked;
   const fixedQuality = format === "png" || (format === "webp" && controls.querySelector<HTMLInputElement>('input[name="lossless"]')!.checked);
   qualitySettings.hidden = fixedQuality;
   byId<HTMLInputElement>("target-size").disabled = fixedQuality;
@@ -612,6 +640,7 @@ paletteInput.addEventListener("change", () => {
 });
 
 function refreshControls(): void {
+  updateCropSummary();
   lockRatioButton.classList.toggle("active", ratioLocked);
   lockRatioButton.setAttribute("aria-pressed", String(ratioLocked));
   flopButton.setAttribute("aria-pressed", flopInput.value);
@@ -632,6 +661,9 @@ function resetControls(): void {
   heightInput.value = "";
   ratioLocked = true;
   rotationInput.value = "0";
+  for (const [key, value] of Object.entries({ cropRatio: "", cropScale: "100", cropX: "50", cropY: "50" })) {
+    controls.querySelector<HTMLInputElement>(`input[name="${key}"]`)!.value = value;
+  }
   flopInput.value = "false";
   flipInput.value = "false";
   advancedOptions.open = false;
@@ -643,6 +675,11 @@ function applyFields(fields: Record<string, string>): void {
   controls.querySelectorAll<HTMLInputElement | HTMLSelectElement>("input[name], select[name]").forEach(input => {
     const value = fields[input.name];
     if (value === undefined) return;
+    if (input.name === "background") {
+      byId<HTMLInputElement>("background-enabled").checked = Boolean(value);
+      input.value = value || "#ffffff";
+      return;
+    }
     if (input instanceof HTMLInputElement && input.type === "checkbox") input.checked = value === "true";
     else if (input instanceof HTMLInputElement && input.type === "radio") input.checked = input.value === value;
     else input.value = value;
@@ -739,11 +776,16 @@ controls.addEventListener("submit", async (event) => {
   setBusy(true);
 
   try {
-    const requestUrl = selectedRemoteUrl ? remoteTransformUrl(selectedRemoteUrl, payload) : null;
+    const fields = formFields(controls);
+    const prepare = needsPreparation(fields);
+    const requestUrl = selectedRemoteUrl && !prepare ? remoteTransformUrl(selectedRemoteUrl, payload) : null;
     let response: Response;
 
-    if (selectedFile) {
-      payload.set("image", selectedFile, selectedFile.name);
+    if (selectedFile || prepare) {
+      const source = selectedFile ?? remoteSourceFile;
+      if (!source) throw new Error("Reload the source image before converting.");
+      const prepared = await prepareImage(source, fields, signal);
+      payload.set("image", prepared, prepared.name);
       response = await fetch("/api/smush", {
         method: "POST",
         body: payload,

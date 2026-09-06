@@ -208,6 +208,15 @@
             <p class="settings-note">Saved only in this browser. No images or URLs are saved.</p>
           </section>
 
+          <section class="crop-settings">
+            <div class="queue-actions"><button id="crop-open" type="button" class="small-button">Crop image</button><button id="crop-remove" type="button" class="small-button" disabled>Remove crop</button></div>
+            <p id="crop-summary" class="settings-note">No crop. Cropping happens before resize and rotation.</p>
+            <input type="hidden" name="cropRatio" value="" />
+            <input type="hidden" name="cropScale" value="100" />
+            <input type="hidden" name="cropX" value="50" />
+            <input type="hidden" name="cropY" value="50" />
+          </section>
+
           <fieldset class="control-group">
             <legend><span class="step-number step-lime">1</span>Size</legend>
 
@@ -261,6 +270,11 @@
               </label>
             </div>
           </fieldset>
+
+          <div id="background-settings" class="background-settings" hidden>
+            <label><input id="background-enabled" type="checkbox" /> Fill transparent pixels</label>
+            <label for="background-color">JPEG background <input id="background-color" name="background" type="color" value="#ffffff" disabled /></label>
+          </div>
 
           <div class="target-size-control">
             <label class="input-label" for="target-size"><span>Target file size (optional)</span></label>
@@ -397,6 +411,21 @@
         <a href="https://bun.com/blog/bun-v1.4" target="_blank" rel="noreferrer">Bun 1.4 ↗</a>
       </div>
     </footer>
+
+    <dialog id="crop-dialog" aria-labelledby="crop-title">
+      <h2 id="crop-title">Crop image</h2>
+      <p>Drag to position the crop, or use the horizontal and vertical controls.</p>
+      <canvas id="crop-canvas" aria-label="Crop preview"></canvas>
+      <p id="crop-dimensions" aria-live="polite"></p>
+      <div class="crop-controls">
+        <label>Aspect ratio <select id="crop-ratio-choice"><option value="original">Original</option><option value="1">Square (1:1)</option><option value="0.8">Portrait (4:5)</option><option value="1.7777777777777777">Widescreen (16:9)</option><option value="custom">Custom ratio</option></select></label>
+        <div id="crop-custom" hidden><label>Ratio width <input id="crop-custom-width" type="number" min="0.01" max="100" step="any" value="3" /></label><label>Ratio height <input id="crop-custom-height" type="number" min="0.01" max="100" step="any" value="2" /></label></div>
+        <label>Crop area <input id="crop-area" type="range" min="1" max="100" value="100" /></label>
+        <label>Horizontal position <input id="crop-focus-x" type="range" min="0" max="100" value="50" /></label>
+        <label>Vertical position <input id="crop-focus-y" type="range" min="0" max="100" value="50" /></label>
+      </div>
+      <div class="queue-actions"><button id="crop-cancel" type="button" class="small-button">Cancel</button><button id="crop-apply" type="button" class="small-button">Apply crop</button></div>
+    </dialog>
 
     <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
   </body>
