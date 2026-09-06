@@ -1284,3 +1284,23 @@ footer p { margin: 0; color: var(--ink-soft); font-size: 0.7rem; text-align: cen
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Quick exports stay close to the settings they update. */
+.quick-export { padding: 18px 24px; border-bottom: 1.5px solid var(--line); }
+.quick-export h3 { margin: 0 0 10px; font-size: 0.78rem; }
+.export-presets { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.export-presets button { padding: 10px 4px; border: 1.5px solid var(--line); border-radius: 9px; background: var(--white); cursor: pointer; font-size: 0.76rem; font-weight: 800; }
+.export-presets button:hover { background: var(--lime); }
+.export-presets small { display: block; margin-top: 3px; font-size: 0.58rem; font-weight: 500; }
+.preset-hint, .settings-note { margin: 10px 0 0; color: var(--ink-soft); font-size: 0.65rem; }
+.saved-settings { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 14px; }
+.saved-settings button { font-size: 0.65rem; }
+.saved-settings button:disabled { opacity: 0.45; cursor: not-allowed; }
+.settings-note { font-size: 0.58rem; }
+.comparison-controls { margin: 0 20px 16px; }
+.comparison-controls label { display: flex; justify-content: space-between; gap: 8px; font-size: 0.7rem; }
+.comparison-controls input { width: 100%; accent-color: var(--ink); cursor: ew-resize; }
+.comparison-controls p { margin: 2px 0 0; color: var(--ink-soft); font-size: 0.65rem; text-align: center; }
+.image-stage.comparing img { position: absolute; inset: 20px; width: calc(100% - 40px); height: calc(100% - 40px); filter: none; }
+.comparison-result { z-index: 2; clip-path: inset(0 0 0 var(--comparison-position, 50%)); }
+.comparison-divider { position: absolute; z-index: 2; top: 0; bottom: 0; left: var(--comparison-position, 50%); width: 2px; background: var(--white); box-shadow: 0 0 0 1px var(--ink); pointer-events: none; }

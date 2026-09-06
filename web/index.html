@@ -97,20 +97,31 @@
             </div>
 
             <div class="compare-tabs" role="tablist" aria-label="Image preview">
-              <button id="original-tab" class="compare-tab active" type="button" role="tab" aria-selected="true">Original</button>
-              <button id="result-tab" class="compare-tab" type="button" role="tab" aria-selected="false" disabled>
+              <button id="original-tab" class="compare-tab active" type="button" role="tab" aria-controls="image-stage" aria-selected="true">Original</button>
+              <button id="result-tab" class="compare-tab" type="button" role="tab" aria-controls="image-stage" aria-selected="false" tabindex="-1" disabled>
                 Result <span class="new-dot" aria-label="new result"></span>
               </button>
+              <button id="compare-tab" class="compare-tab" type="button" role="tab" aria-controls="image-stage" aria-selected="false" tabindex="-1" disabled>Compare</button>
             </div>
 
-            <div id="image-stage" class="image-stage">
+            <div id="image-stage" class="image-stage" role="tabpanel" aria-labelledby="original-tab">
               <div class="checkerboard" aria-hidden="true"></div>
               <img id="preview-image" alt="Preview of the selected image" />
+              <div id="comparison-result" class="comparison-result checkerboard" hidden>
+                <img id="comparison-image" alt="Converted image for comparison" />
+              </div>
+              <div id="comparison-divider" class="comparison-divider" aria-hidden="true" hidden></div>
               <div id="processing" class="processing" hidden>
                 <div class="squish-loader" aria-hidden="true"><span>•ᴗ•</span></div>
                 <strong>Processing image…</strong>
                 <small>Using Bun.Image</small>
               </div>
+            </div>
+
+            <div id="comparison-controls" class="comparison-controls" hidden>
+              <label for="comparison-position"><span>Original</span><strong>Compare images</strong><span>Result</span></label>
+              <input id="comparison-position" type="range" min="0" max="100" value="50" aria-label="Comparison position" aria-valuetext="50% original, 50% result" />
+              <p>Slide to compare. Both images fit the same preview area.</p>
             </div>
 
             <div class="image-stats" aria-live="polite">
@@ -160,6 +171,22 @@
             </div>
             <button id="reset-button" class="reset-button" type="button">Reset</button>
           </div>
+
+          <section class="quick-export" aria-labelledby="quick-export-heading">
+            <h3 id="quick-export-heading">Quick export</h3>
+            <div class="export-presets">
+              <button type="button" data-export-preset="web">Web <small>Smaller files</small></button>
+              <button type="button" data-export-preset="email">Email <small>Easy to share</small></button>
+              <button type="button" data-export-preset="lossless">Lossless <small>Keep every pixel</small></button>
+            </div>
+            <p id="preset-hint" class="preset-hint" aria-live="polite">Start with a preset, then fine-tune below.</p>
+            <div class="saved-settings" aria-label="Saved settings">
+              <button id="save-settings" type="button" class="text-link">Save settings</button>
+              <button id="use-settings" type="button" class="text-link" disabled>Use saved</button>
+              <button id="forget-settings" type="button" class="text-link" disabled>Forget</button>
+            </div>
+            <p class="settings-note">Saved only in this browser. No images or URLs are saved.</p>
+          </section>
 
           <fieldset class="control-group">
             <legend><span class="step-number step-lime">1</span>Size</legend>

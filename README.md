@@ -29,6 +29,10 @@
 - Resize up to 12,000px per side with Bun's native resampling kernels
 - Rotate, flip horizontally or vertically, and adjust brightness/saturation
 - Export WebP, progressive JPEG, or PNG
+- Start with Web, Email, or Lossless export presets
+- Save, reuse, and forget your preferred settings in this browser (no images or URLs are saved)
+- Keep chosen settings when replacing an image; use Reset to return to defaults
+- Inspect original and converted images with a keyboard-accessible comparison slider
 - Tune quality, lossless WebP, PNG compression, palette colors, and dithering
 - Preview before/after size and dimensions, then download the result
 - Copy a reusable transformation URL for remote images

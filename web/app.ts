@@ -1,4 +1,5 @@
 import { LatestRequest, responseDimensions } from "./requests";
+import { exportPresets, readSavedSettings, savedSettings, SETTINGS_KEY } from "./settings";
 
 const MAX_FILE_BYTES = 15 * 1024 * 1024;
 
@@ -21,6 +22,17 @@ const sourceName = byId<HTMLElement>("source-name");
 const replaceButton = byId<HTMLButtonElement>("replace-button");
 const originalTab = byId<HTMLButtonElement>("original-tab");
 const resultTab = byId<HTMLButtonElement>("result-tab");
+const compareTab = byId<HTMLButtonElement>("compare-tab");
+const imageStage = byId<HTMLDivElement>("image-stage");
+const comparisonResult = byId<HTMLDivElement>("comparison-result");
+const comparisonImage = byId<HTMLImageElement>("comparison-image");
+const comparisonDivider = byId<HTMLDivElement>("comparison-divider");
+const comparisonControls = byId<HTMLDivElement>("comparison-controls");
+const comparisonPosition = byId<HTMLInputElement>("comparison-position");
+const saveSettingsButton = byId<HTMLButtonElement>("save-settings");
+const useSettingsButton = byId<HTMLButtonElement>("use-settings");
+const forgetSettingsButton = byId<HTMLButtonElement>("forget-settings");
+const presetHint = byId<HTMLElement>("preset-hint");
 const processing = byId<HTMLDivElement>("processing");
 const dimensionStat = byId<HTMLElement>("dimension-stat");
 const sizeStat = byId<HTMLElement>("size-stat");
@@ -73,7 +85,7 @@ let resultTransformUrl: string | null = null;
 let resultFilename = "smushed-image.webp";
 let sourceInfo: ImageInfo = { width: 0, height: 0, size: 0, type: "image" };
 let outputInfo: ImageInfo | null = null;
-let currentView: "original" | "result" = "original";
+let currentView: "original" | "result" | "compare" = "original";
 let ratioLocked = true;
 let busy = false;
 const sourceRequest = new LatestRequest();
@@ -127,6 +139,8 @@ function clearResult(): void {
   resultTransformUrl = null;
   outputInfo = null;
   resultTab.disabled = true;
+  compareTab.disabled = true;
+  comparisonImage.removeAttribute("src");
   resultBar.hidden = true;
   copyUrlButton.hidden = true;
   setView("original");
@@ -144,18 +158,43 @@ function renderStats(info: ImageInfo): void {
   typeStat.textContent = friendlyType(info.type);
 }
 
-function setView(view: "original" | "result"): void {
-  if (view === "result" && (!resultUrl || !outputInfo)) return;
+function setView(view: "original" | "result" | "compare"): void {
+  if (view !== "original" && (!resultUrl || !outputInfo)) return;
   currentView = view;
-  const isResult = view === "result";
+  const comparing = view === "compare";
+  for (const [tab, name] of [[originalTab, "original"], [resultTab, "result"], [compareTab, "compare"]] as const) {
+    tab.classList.toggle("active", view === name);
+    tab.setAttribute("aria-selected", String(view === name));
+    tab.tabIndex = view === name ? 0 : -1;
+  }
+  imageStage.setAttribute("aria-labelledby", `${view}-tab`);
+  imageStage.classList.toggle("comparing", comparing);
+  comparisonResult.hidden = !comparing;
+  comparisonDivider.hidden = !comparing;
+  comparisonControls.hidden = !comparing;
+  if (comparing && comparisonImage.src !== resultUrl) comparisonImage.src = resultUrl!;
+  previewImage.src = view === "result" ? (resultUrl ?? "") : (originalUrl ?? "");
+  renderStats(view !== "original" && outputInfo ? outputInfo : sourceInfo);
+}
 
-  originalTab.classList.toggle("active", !isResult);
-  originalTab.setAttribute("aria-selected", String(!isResult));
-  resultTab.classList.toggle("active", isResult);
-  resultTab.setAttribute("aria-selected", String(isResult));
+comparisonPosition.addEventListener("input", () => {
+  const position = Number(comparisonPosition.value);
+  imageStage.style.setProperty("--comparison-position", `${position}%`);
+  comparisonPosition.setAttribute("aria-valuetext", `${position}% original, ${100 - position}% result`);
+});
 
-  previewImage.src = isResult ? (resultUrl ?? "") : (originalUrl ?? "");
-  renderStats(isResult && outputInfo ? outputInfo : sourceInfo);
+for (const tab of [originalTab, resultTab, compareTab]) {
+  tab.addEventListener("keydown", (event) => {
+    const tabs = [originalTab, resultTab, compareTab].filter(item => !item.disabled);
+    const index = tabs.indexOf(tab);
+    const next = event.key === "ArrowRight" ? tabs[(index + 1) % tabs.length]
+      : event.key === "ArrowLeft" ? tabs[(index + tabs.length - 1) % tabs.length]
+      : event.key === "Home" ? tabs[0] : event.key === "End" ? tabs.at(-1) : null;
+    if (!next) return;
+    event.preventDefault();
+    next.click();
+    next.focus();
+  });
 }
 
 async function loadFile(file: File): Promise<void> {
@@ -200,7 +239,6 @@ async function loadFile(file: File): Promise<void> {
   previewShell.hidden = false;
   smushButton.disabled = false;
   controlHint.textContent = "Ready to convert. The original file will not be changed.";
-  resetControls();
   setView("original");
 }
 
@@ -312,7 +350,6 @@ async function loadRemoteImage(value: string): Promise<void> {
     previewShell.hidden = false;
     smushButton.disabled = false;
     controlHint.textContent = "Ready to convert from the source URL.";
-    resetControls();
     setView("original");
   } catch (error) {
     if (!signal.aborted) showToast(error instanceof Error ? error.message : "The remote image could not be loaded.", true);
@@ -446,6 +483,7 @@ demoButton.addEventListener("click", (event) => {
 
 originalTab.addEventListener("click", () => setView("original"));
 resultTab.addEventListener("click", () => setView("result"));
+compareTab.addEventListener("click", () => setView("compare"));
 
 lockRatioButton.addEventListener("click", () => {
   ratioLocked = !ratioLocked;
@@ -534,7 +572,7 @@ function selectedFormat(): "webp" | "jpeg" | "png" {
 
 function updateFormatSettings(): void {
   const format = selectedFormat();
-  qualitySettings.hidden = format === "png";
+  qualitySettings.hidden = format === "png" || (format === "webp" && controls.querySelector<HTMLInputElement>('input[name="lossless"]')!.checked);
   pngSettings.hidden = format !== "png";
   losslessRow.hidden = format !== "webp";
   progressiveRow.hidden = format !== "jpeg";
@@ -544,32 +582,106 @@ controls.querySelectorAll<HTMLInputElement>('input[name="format"]').forEach((inp
   input.addEventListener("change", updateFormatSettings);
 });
 
+controls.querySelector<HTMLInputElement>('input[name="lossless"]')!.addEventListener("change", updateFormatSettings);
+
 paletteInput.addEventListener("change", () => {
   paletteOptions.hidden = !paletteInput.checked;
 });
+
+function refreshControls(): void {
+  lockRatioButton.classList.toggle("active", ratioLocked);
+  lockRatioButton.setAttribute("aria-pressed", String(ratioLocked));
+  flopButton.setAttribute("aria-pressed", flopInput.value);
+  flipButton.setAttribute("aria-pressed", flipInput.value);
+  document.querySelectorAll<HTMLButtonElement>("[data-rotation]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.rotation === rotationInput.value);
+  });
+  paletteOptions.hidden = !paletteInput.checked;
+  updateFormatSettings();
+  for (const range of [brightnessInput, saturationInput, qualityInput, compressionInput, colorsInput]) {
+    range.dispatchEvent(new Event("input"));
+  }
+}
 
 function resetControls(): void {
   controls.reset();
   widthInput.value = "";
   heightInput.value = "";
   ratioLocked = true;
-  lockRatioButton.classList.add("active");
-  lockRatioButton.setAttribute("aria-pressed", "true");
   rotationInput.value = "0";
   flopInput.value = "false";
   flipInput.value = "false";
-  flopButton.setAttribute("aria-pressed", "false");
-  flipButton.setAttribute("aria-pressed", "false");
-  document.querySelectorAll<HTMLButtonElement>("[data-rotation]").forEach((button) => {
-    button.classList.toggle("active", button.dataset.rotation === "0");
-  });
-  paletteOptions.hidden = true;
   advancedOptions.open = false;
-  updateFormatSettings();
-  for (const range of [brightnessInput, saturationInput, qualityInput, compressionInput, colorsInput]) {
-    range.dispatchEvent(new Event("input"));
-  }
+  presetHint.textContent = "Start with a preset, then fine-tune below.";
+  refreshControls();
 }
+
+function applyFields(fields: Record<string, string>): void {
+  controls.querySelectorAll<HTMLInputElement | HTMLSelectElement>("input[name], select[name]").forEach(input => {
+    const value = fields[input.name];
+    if (value === undefined) return;
+    if (input instanceof HTMLInputElement && input.type === "checkbox") input.checked = value === "true";
+    else if (input instanceof HTMLInputElement && input.type === "radio") input.checked = input.value === value;
+    else input.value = value;
+  });
+  refreshControls();
+}
+
+document.querySelectorAll<HTMLButtonElement>("[data-export-preset]").forEach(button => {
+  button.addEventListener("click", () => {
+    const preset = exportPresets[button.dataset.exportPreset as keyof typeof exportPresets];
+    if (!preset) return;
+    resetControls();
+    applyFields(preset.fields);
+    presetHint.textContent = preset.description;
+    showToast(`${preset.label} settings applied. Convert when ready.`);
+  });
+});
+
+function refreshSavedSettings(): void {
+  let available = false;
+  try { available = readSavedSettings(localStorage.getItem(SETTINGS_KEY)) !== null; } catch {}
+  useSettingsButton.disabled = !available;
+  forgetSettingsButton.disabled = !available;
+}
+
+saveSettingsButton.addEventListener("click", () => {
+  if (!controls.reportValidity()) return;
+  const fields: Record<string, string> = {};
+  controls.querySelectorAll<HTMLInputElement | HTMLSelectElement>("input[name], select[name]").forEach(input => {
+    if (input instanceof HTMLInputElement && input.type === "radio" && !input.checked) return;
+    fields[input.name] = input instanceof HTMLInputElement && input.type === "checkbox" ? String(input.checked) : input.value;
+  });
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(savedSettings(fields, ratioLocked)));
+    refreshSavedSettings();
+    showToast("Settings saved in this browser.");
+  } catch {
+    showToast("Settings could not be saved. Browser storage may be unavailable.", true);
+  }
+});
+
+useSettingsButton.addEventListener("click", () => {
+  try {
+    const saved = readSavedSettings(localStorage.getItem(SETTINGS_KEY));
+    if (!saved) { refreshSavedSettings(); showToast("No saved settings are available."); return; }
+    resetControls();
+    ratioLocked = saved.ratioLocked;
+    applyFields(saved.fields);
+    presetHint.textContent = "Your saved settings are applied.";
+    showToast("Saved settings applied. Convert when ready.");
+  } catch { showToast("Browser storage is unavailable.", true); }
+});
+
+forgetSettingsButton.addEventListener("click", () => {
+  try {
+    localStorage.removeItem(SETTINGS_KEY);
+    refreshSavedSettings();
+    showToast("Saved settings removed.");
+  } catch { showToast("Saved settings could not be removed.", true); }
+});
+window.addEventListener("storage", refreshSavedSettings);
+refreshSavedSettings();
 
 resetButton.addEventListener("click", () => {
   resetControls();
@@ -626,6 +738,7 @@ controls.addEventListener("submit", async (event) => {
     const dimensions = responseDimensions(response) ?? await getImageDimensions(blob).catch(() => ({ width: 0, height: 0 }));
     if (signal.aborted) return;
     resultSettings = settingsKey;
+    comparisonImage.removeAttribute("src");
     if (resultUrl) URL.revokeObjectURL(resultUrl);
     resultBlob = blob;
     resultUrl = URL.createObjectURL(blob);
@@ -653,6 +766,7 @@ controls.addEventListener("submit", async (event) => {
     }
 
     resultTab.disabled = false;
+    compareTab.disabled = false;
     resultBar.hidden = false;
     setView("result");
     showToast(`Image converted with Bun ${response.headers.get("x-bun-version") ?? "1.4"}.`);
@@ -697,4 +811,4 @@ window.addEventListener("beforeunload", () => {
   if (resultUrl) URL.revokeObjectURL(resultUrl);
 });
 
-updateFormatSettings();
+resetControls();
