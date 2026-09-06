@@ -42,7 +42,7 @@
       <section class="hero" aria-labelledby="hero-title">
         <h1 id="hero-title">Resize and convert images.</h1>
         <p class="hero-copy">
-          Drop an image, choose your settings, and download the result.
+          Drop images, choose your settings, and download the results.
         </p>
       </section>
 
@@ -52,6 +52,7 @@
             <input
               id="file-input"
               type="file"
+              multiple
               accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/heic,image/heif,image/avif,image/tiff"
               hidden
             />
@@ -154,6 +155,25 @@
               </div>
             </div>
           </div>
+
+          <div class="queue-entry">
+            <button id="queue-add" type="button" class="small-button">Add images to queue</button>
+            <input id="queue-input" type="file" accept="image/*" multiple hidden />
+            <span>Up to 50 exports · 150 MB total</span>
+          </div>
+          <section id="queue-panel" class="queue-panel" aria-labelledby="queue-heading" hidden>
+            <h2 id="queue-heading">Conversion queue</h2>
+            <p id="queue-summary" role="status" aria-live="polite"></p>
+            <progress id="queue-progress" aria-label="Queue progress" value="0" max="1"></progress>
+            <p class="settings-note">Settings are captured when you convert. Retries use the same settings.</p>
+            <div class="queue-actions">
+              <button id="queue-start" type="button" class="small-button">Convert queue</button>
+              <button id="queue-cancel" type="button" class="small-button">Cancel all</button>
+              <button id="queue-zip" type="button" class="small-button" disabled>Download ZIP</button>
+              <button id="queue-clear" type="button" class="small-button">Clear queue</button>
+            </div>
+            <ol id="queue-list"></ol>
+          </section>
 
           <aside class="privacy-card">
             <span class="privacy-icon" aria-hidden="true">✓</span>

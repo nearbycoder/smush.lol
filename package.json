@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "@elysiajs/static": "^1.4.10",
-    "elysia": "^1.4.29"
+    "elysia": "^1.4.29",
+    "fflate": "0.8.2"
   },
   "devDependencies": {
     "@types/bun": "^1.4.0",
