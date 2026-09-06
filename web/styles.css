@@ -1336,3 +1336,12 @@ footer p { margin: 0; color: var(--ink-soft); font-size: 0.7rem; text-align: cen
 .crop-controls label { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; font-size: 0.78rem; }
 .crop-controls input, .crop-controls select { max-width: 60%; }
 #crop-custom { display: flex; gap: 12px; }
+
+.recipe-fields { display: grid; grid-template-columns: 1fr; gap: 6px; margin-top: 14px; }
+.recipe-fields label, .multi-export-content { font-size: 0.72rem; }
+.recipe-fields input, .recipe-fields select, #export-widths { min-width: 0; width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--white); }
+.multi-export-content { display: grid; gap: 12px; padding: 18px 24px; }
+.multi-export-content fieldset { display: flex; flex-wrap: wrap; gap: 12px; border: 0; padding: 0; margin: 0; }
+.multi-export-content legend { margin-bottom: 6px; }
+.result-actions { flex-wrap: wrap; }
+#copy-image-button:disabled { opacity: 0.5; }

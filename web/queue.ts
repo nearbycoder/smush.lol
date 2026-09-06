@@ -4,6 +4,7 @@ export interface ExportResult { blob: Blob; filename: string }
 export interface QueueJob {
   id: number;
   name: string;
+  suffix?: string;
   file: File;
   fields?: ExportFields;
   status: "ready" | "queued" | "processing" | "done" | "error" | "cancelled";
@@ -22,11 +23,16 @@ export class ConversionQueue {
   constructor(private process: Processor, private changed: () => void = () => {}) {}
 
   add(files: File[], fields?: ExportFields, label?: string): void {
-    if (this.jobs.length + files.length > MAX_QUEUE_FILES) throw new Error("Keep the queue to 50 exports or fewer.");
-    const bytes = [...this.jobs.map(job => job.file), ...files].reduce((sum, file) => sum + file.size, 0);
+    this.addMany(files.map(file => ({ file, fields, label })));
+  }
+
+  addMany(entries: Array<{ file: File; fields?: ExportFields; label?: string }>): void {
+    if (this.jobs.length + entries.length > MAX_QUEUE_FILES) throw new Error("Keep the queue to 50 exports or fewer.");
+    const bytes = [...this.jobs.map(job => job.file), ...entries.map(entry => entry.file)].reduce((sum, file) => sum + file.size, 0);
     if (bytes > MAX_QUEUE_BYTES) throw new Error("Keep queued source images under 150 MB total.");
-    for (const file of files) this.jobs.push({
+    for (const { file, fields, label } of entries) this.jobs.push({
       id: this.nextId++, name: label ? `${file.name} · ${label}` : file.name, file,
+      suffix: label?.replace(/[^a-zA-Z0-9_-]/g, "-"),
       fields: fields ? { ...fields } : undefined, status: "ready",
     });
     this.changed();
@@ -93,6 +99,10 @@ export class ConversionQueue {
         if (controller.signal.aborted || !this.jobs.includes(job)) continue;
         const total = this.jobs.reduce((sum, item) => sum + (item.result?.blob.size ?? 0), 0);
         if (total + result.blob.size > MAX_QUEUE_BYTES) throw new Error("Results exceed 150 MB. Download and remove completed items, then retry.");
+        if (job.suffix) {
+          const dot = result.filename.lastIndexOf(".");
+          result.filename = dot > 0 ? `${result.filename.slice(0, dot)}-${job.suffix}${result.filename.slice(dot)}` : `${result.filename}-${job.suffix}`;
+        }
         job.result = result;
         job.status = "done";
       } catch (error) {
