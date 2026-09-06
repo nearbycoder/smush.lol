@@ -1319,3 +1319,7 @@ footer p { margin: 0; color: var(--ink-soft); font-size: 0.7rem; text-align: cen
 .queue-item-actions { flex-shrink: 0; }
 .queue-panel button:disabled { opacity: 0.45; cursor: not-allowed; }
 @media (max-width: 650px) { #queue-list li { align-items: flex-start; flex-direction: column; } }
+
+.target-size-control { padding: 18px 24px; border-bottom: 1px solid var(--paper-deep); }
+.target-size-control .number-wrap { margin-top: 8px; }
+.target-size-control input:disabled { opacity: 0.45; }

@@ -194,6 +194,7 @@ const result = await response.blob();</code></pre>
                   <tr><td><code>brightness</code></td><td>0–3</td><td><code>1</code></td></tr>
                   <tr><td><code>saturation</code></td><td>0–3</td><td><code>1</code></td></tr>
                   <tr><td><code>format</code></td><td><code>webp</code>, <code>jpeg</code>, <code>png</code></td><td><code>webp</code></td></tr>
+                  <tr><td><code>targetKB</code></td><td>1–15,360 KB (1024 bytes each); JPEG or lossy WebP. Searches up to the requested quality; returns 422 if unreachable. Dimensions stay unchanged.</td><td>None</td></tr>
                   <tr><td><code>quality</code></td><td>1–100; WebP and JPEG</td><td><code>82</code></td></tr>
                   <tr><td><code>lossless</code></td><td>Boolean; WebP only</td><td><code>false</code></td></tr>
                   <tr><td><code>progressive</code></td><td>Boolean; JPEG only</td><td><code>false</code></td></tr>
@@ -223,6 +224,7 @@ const result = await response.blob();</code></pre>
               <div><code>Content-Disposition</code><span>Safe generated filename</span></div>
               <div><code>X-Image-Width</code><span>Output width</span></div>
               <div><code>X-Image-Height</code><span>Output height</span></div>
+              <div><code>X-Image-Quality</code><span>Selected quality (JPEG and lossy WebP)</span></div>
               <div><code>X-Image-Format</code><span>Requested output format</span></div>
               <div><code>X-Original-Format</code><span>Detected source format</span></div>
               <div><code>X-Bun-Version</code><span>Processing runtime version</span></div>

@@ -262,6 +262,12 @@
             </div>
           </fieldset>
 
+          <div class="target-size-control">
+            <label class="input-label" for="target-size"><span>Target file size (optional)</span></label>
+            <div class="number-wrap"><input id="target-size" name="targetKB" type="number" min="1" max="15360" step="1" placeholder="e.g. 500" /><i>KB</i></div>
+            <p id="target-hint" class="settings-note">Adjust quality to fit under this limit. Smaller dimensions may be needed.</p>
+          </div>
+
           <details id="advanced-options" class="advanced-options">
             <summary>
               <span>Advanced options</span>

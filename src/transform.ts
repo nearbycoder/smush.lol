@@ -32,6 +32,7 @@ export interface TransformSettings {
   saturation: number;
   format: OutputFormat;
   quality: number;
+  targetKB?: number;
   progressive: boolean;
   lossless: boolean;
   compressionLevel: number;
@@ -97,7 +98,17 @@ export function parseTransformSettings(fields: FormFields): TransformSettings {
   const rotate: TransformSettings["rotate"] =
     rotation === 90 || rotation === 180 || rotation === 270 ? rotation : 0;
 
+  const rawTarget = readString(fields, "targetKB")?.trim();
+  const targetKB = rawTarget ? Number(rawTarget) : undefined;
+  if (targetKB !== undefined && (!Number.isInteger(targetKB) || targetKB < 1 || targetKB > 15360)) {
+    throw new Error("Target size must be between 1 and 15,360 KB.");
+  }
+  if (targetKB && (format === "png" || (format === "webp" && readBoolean(fields, "lossless")))) {
+    throw new Error("Target file size requires JPEG or lossy WebP.");
+  }
+
   return {
+    targetKB,
     width: readDimension(fields, "width"),
     height: readDimension(fields, "height"),
     fit,
