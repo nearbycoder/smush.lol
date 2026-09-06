@@ -25,6 +25,8 @@
 
 ## What it can do
 
+- Batch-convert up to 50 exports (150 MB of sources), with per-item cancel, retry, and downloads
+- Download completed results in a ZIP with unique filenames; clear the queue to release images
 - Drag, browse, paste, load a public image URL, or start with a generated demo image
 - Resize up to 12,000px per side with Bun's native resampling kernels
 - Rotate, flip horizontally or vertically, and adjust brightness/saturation

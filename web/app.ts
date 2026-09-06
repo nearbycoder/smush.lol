@@ -1,3 +1,4 @@
+import { mountQueue } from "./queue-panel";
 import { LatestRequest, responseDimensions } from "./requests";
 import { exportPresets, readSavedSettings, savedSettings, SETTINGS_KEY } from "./settings";
 
@@ -98,6 +99,24 @@ function formatBytes(bytes: number): string {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(bytes < 100 * 1024 ? 1 : 0)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
+
+const queue = mountQueue(controls, showToast);
+
+function acceptFiles(files: File[], queueOnly = false): void {
+  if (!files.length) return;
+  const valid = files.filter(file => isSupportedImage(file) && file.size <= MAX_FILE_BYTES);
+  if (valid.length !== files.length) showToast("Skipped unsupported files or images over 15 MB.", true);
+  if (!valid.length) return;
+  if (valid.length > 1 || queueOnly) {
+    try { queue.add(valid); showToast(`${valid.length} images added. Choose settings, then convert the queue.`); }
+    catch (error) { showToast(error instanceof Error ? error.message : "Could not add images.", true); return; }
+  }
+  if (!queueOnly) void loadFile(valid[0]!);
+}
+
+const queueInput = byId<HTMLInputElement>("queue-input");
+byId("queue-add").addEventListener("click", () => { queueInput.value = ""; queueInput.click(); });
+queueInput.addEventListener("change", () => acceptFiles(Array.from(queueInput.files ?? []), true));
 
 function friendlyType(type: string): string {
   const subtype = type.replace(/^image\//, "").replace("jpeg", "jpg");
@@ -377,8 +396,7 @@ browseButton.addEventListener("click", (event) => {
 });
 
 fileInput.addEventListener("change", () => {
-  const file = fileInput.files?.[0];
-  if (file) void loadFile(file);
+  acceptFiles(Array.from(fileInput.files ?? []));
 });
 
 urlForm.addEventListener("click", (event) => event.stopPropagation());
@@ -421,15 +439,14 @@ for (const eventName of ["dragleave", "drop"] as const) {
 }
 
 dropZone.addEventListener("drop", (event) => {
-  const file = event.dataTransfer?.files[0];
-  if (file) void loadFile(file);
+  acceptFiles(Array.from(event.dataTransfer?.files ?? []));
 });
 
 document.addEventListener("paste", (event) => {
-  const file = Array.from(event.clipboardData?.files ?? []).find(isSupportedImage);
-  if (file) {
+  const files = Array.from(event.clipboardData?.files ?? []).filter(isSupportedImage);
+  if (files.length) {
     event.preventDefault();
-    void loadFile(file);
+    acceptFiles(files);
   }
 });
 
