@@ -1,3 +1,4 @@
+import { copyImage } from "./clipboard";
 import { ConversionQueue, convertFile, formFields, type Processor, type QueueJob } from "./queue";
 import { createArchive, downloadBlob } from "./archive";
 
@@ -44,7 +45,10 @@ export function mountQueue(form: HTMLFormElement, notify: (message: string, erro
       button.addEventListener("click", run);
       actions.append(button);
     }
-    if (job.result) action("Download", () => downloadBlob(job.result!.blob, job.result!.filename));
+    if (job.result) {
+      action("Download", () => downloadBlob(job.result!.blob, job.result!.filename));
+      action("Copy", () => { void copyImage(job.result!.blob).then(() => notify("Image copied as PNG."), () => notify("Could not copy the image. Allow clipboard access or download it instead.", true)); });
+    }
     if (["ready", "queued", "processing"].includes(job.status)) action("Cancel", () => queue.cancel(job.id));
     if (["error", "cancelled"].includes(job.status)) action("Retry", () => { void queue.retry(job.id); });
     action("Remove", () => queue.remove(job.id));

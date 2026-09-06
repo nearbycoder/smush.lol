@@ -149,6 +149,7 @@
                 <button id="copy-url-button" class="copy-url-button" type="button" hidden>
                   Copy URL
                 </button>
+                <button id="copy-image-button" class="copy-url-button" type="button">Copy image</button>
                 <button id="download-button" class="download-button" type="button">
                   Download <span aria-hidden="true">↓</span>
                 </button>
@@ -200,12 +201,16 @@
               <button type="button" data-export-preset="lossless">Lossless <small>Keep every pixel</small></button>
             </div>
             <p id="preset-hint" class="preset-hint" aria-live="polite">Start with a preset, then fine-tune below.</p>
-            <div class="saved-settings" aria-label="Saved settings">
-              <button id="save-settings" type="button" class="text-link">Save settings</button>
-              <button id="use-settings" type="button" class="text-link" disabled>Use saved</button>
-              <button id="forget-settings" type="button" class="text-link" disabled>Forget</button>
+            <div class="recipe-fields">
+              <label for="recipe-name">Recipe name</label><input id="recipe-name" type="text" maxlength="48" value="My recipe" />
+              <label for="recipe-select">Saved recipes</label><select id="recipe-select" disabled><option>No saved recipes</option></select>
             </div>
-            <p class="settings-note">Saved only in this browser. No images or URLs are saved.</p>
+            <div class="saved-settings" aria-label="Saved recipes">
+              <button id="save-settings" type="button" class="text-link">Save recipe</button>
+              <button id="use-settings" type="button" class="text-link" disabled>Use recipe</button>
+              <button id="forget-settings" type="button" class="text-link" disabled>Delete recipe</button>
+            </div>
+            <p class="settings-note">Up to 20 recipes in this browser. Saving an existing name updates it. No images or URLs are saved.</p>
           </section>
 
           <section class="crop-settings">
@@ -387,6 +392,18 @@
                   </div>
                 </div>
               </section>
+            </div>
+          </details>
+
+          <details id="multiple-exports" class="advanced-options">
+            <summary><span>Export several sizes</span><small>Thumbnails, medium, and full size</small><i aria-hidden="true">＋</i></summary>
+            <div class="multi-export-content">
+              <label for="export-widths">Maximum widths in pixels, separated by commas</label>
+              <input id="export-widths" type="text" value="320, 800, 1600" maxlength="100" />
+              <label><input id="export-original" type="checkbox" checked /> Include original size</label>
+              <fieldset><legend>Formats</legend><label><input type="checkbox" data-export-format="webp" checked /> WebP</label><label><input type="checkbox" data-export-format="jpeg" /> JPEG</label><label><input type="checkbox" data-export-format="png" /> PNG</label></fieldset>
+              <p class="settings-note">Uses the selected source and current edits. Widths keep the image ratio. Target size applies only to JPEG and lossy WebP.</p>
+              <button id="queue-exports" type="button" class="small-button">Queue these exports</button>
             </div>
           </details>
 

@@ -34,7 +34,9 @@
 - Rotate, flip horizontally or vertically, and adjust brightness/saturation
 - Export WebP, progressive JPEG, or PNG
 - Start with Web, Email, or Lossless export presets
-- Save, reuse, and forget your preferred settings in this browser (no images or URLs are saved)
+- Save, reuse, update, and delete up to 20 named recipes in this browser; old saved settings migrate automatically (no images or URLs are saved)
+- Queue multiple widths and formats from one source, with descriptive download filenames
+- Copy a converted image as PNG into a document or chat, from the editor or queue
 - Keep chosen settings when replacing an image; use Reset to return to defaults
 - Inspect original and converted images with a keyboard-accessible comparison slider
 - Set a target file size for JPEG or lossy WebP; quality adjusts without silently resizing

@@ -1,10 +1,13 @@
+import { copyImage } from "./clipboard";
+import { exportVariants } from "./export-variants";
+import { loadRecipes, saveRecipe, writeRecipes } from "./recipes";
 import { mountCropEditor } from "./crop-editor";
 import { cropRect } from "./crop-geometry";
 import { needsPreparation, prepareImage } from "./prepare-image";
 import { formFields } from "./queue";
 import { mountQueue } from "./queue-panel";
 import { LatestRequest, responseDimensions } from "./requests";
-import { exportPresets, readSavedSettings, savedSettings, SETTINGS_KEY } from "./settings";
+import { exportPresets, savedSettings } from "./settings";
 
 const MAX_FILE_BYTES = 15 * 1024 * 1024;
 
@@ -698,12 +701,20 @@ document.querySelectorAll<HTMLButtonElement>("[data-export-preset]").forEach(but
   });
 });
 
-function refreshSavedSettings(): void {
-  let available = false;
-  try { available = readSavedSettings(localStorage.getItem(SETTINGS_KEY)) !== null; } catch {}
-  useSettingsButton.disabled = !available;
-  forgetSettingsButton.disabled = !available;
+const recipeSelect = byId<HTMLSelectElement>("recipe-select");
+const recipeName = byId<HTMLInputElement>("recipe-name");
+function refreshSavedSettings(selectedId = recipeSelect.value): void {
+  try {
+    const recipes = loadRecipes(localStorage);
+    recipeSelect.replaceChildren(...recipes.map(recipe => new Option(recipe.name, recipe.id)));
+    if (!recipes.length) recipeSelect.append(new Option("No saved recipes", ""));
+    if (recipes.some(recipe => recipe.id === selectedId)) recipeSelect.value = selectedId;
+    recipeSelect.disabled = useSettingsButton.disabled = forgetSettingsButton.disabled = recipes.length === 0;
+  } catch {
+    recipeSelect.disabled = useSettingsButton.disabled = forgetSettingsButton.disabled = true;
+  }
 }
+recipeSelect.addEventListener("change", () => { recipeName.value = recipeSelect.selectedOptions[0]?.textContent ?? "My recipe"; });
 
 saveSettingsButton.addEventListener("click", () => {
   if (!controls.reportValidity()) return;
@@ -713,35 +724,52 @@ saveSettingsButton.addEventListener("click", () => {
     fields[input.name] = input instanceof HTMLInputElement && input.type === "checkbox" ? String(input.checked) : input.value;
   });
   try {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(savedSettings(fields, ratioLocked)));
-    refreshSavedSettings();
-    showToast("Settings saved in this browser.");
-  } catch {
-    showToast("Settings could not be saved. Browser storage may be unavailable.", true);
+    const next = saveRecipe(loadRecipes(localStorage), recipeName.value, savedSettings(fields, ratioLocked));
+    writeRecipes(localStorage, next.recipes);
+    refreshSavedSettings(next.id);
+    showToast("Recipe saved in this browser.");
+  } catch (error) {
+    showToast(error instanceof Error && !(error instanceof DOMException) ? error.message : "Recipes could not be saved. Browser storage may be unavailable.", true);
   }
 });
 
 useSettingsButton.addEventListener("click", () => {
   try {
-    const saved = readSavedSettings(localStorage.getItem(SETTINGS_KEY));
-    if (!saved) { refreshSavedSettings(); showToast("No saved settings are available."); return; }
+    const recipe = loadRecipes(localStorage).find(recipe => recipe.id === recipeSelect.value);
+    if (!recipe) { refreshSavedSettings(); showToast("Choose a saved recipe."); return; }
     resetControls();
-    ratioLocked = saved.ratioLocked;
-    applyFields(saved.fields);
-    presetHint.textContent = "Your saved settings are applied.";
-    showToast("Saved settings applied. Convert when ready.");
+    ratioLocked = recipe.settings.ratioLocked;
+    applyFields(recipe.settings.fields);
+    recipeName.value = recipe.name;
+    recipeSelect.value = recipe.id;
+    presetHint.textContent = `Recipe applied: ${recipe.name}`;
+    showToast("Recipe applied. Convert when ready.");
   } catch { showToast("Browser storage is unavailable.", true); }
 });
 
 forgetSettingsButton.addEventListener("click", () => {
   try {
-    localStorage.removeItem(SETTINGS_KEY);
+    writeRecipes(localStorage, loadRecipes(localStorage).filter(recipe => recipe.id !== recipeSelect.value));
     refreshSavedSettings();
-    showToast("Saved settings removed.");
-  } catch { showToast("Saved settings could not be removed.", true); }
+    showToast("Recipe deleted.");
+  } catch { showToast("Recipe could not be deleted.", true); }
 });
-window.addEventListener("storage", refreshSavedSettings);
+window.addEventListener("storage", () => refreshSavedSettings());
 refreshSavedSettings();
+
+byId("queue-exports").addEventListener("click", () => {
+  const file = selectedFile ?? remoteSourceFile;
+  if (!file) { showToast("Choose an image before creating exports."); return; }
+  if (!controls.reportValidity()) return;
+  try {
+    const variants = exportVariants(byId<HTMLInputElement>("export-widths").value,
+      Array.from(controls.querySelectorAll<HTMLInputElement>("[data-export-format]:checked")).map(input => input.dataset.exportFormat!),
+      byId<HTMLInputElement>("export-original").checked, formFields(controls));
+    queue.addMany(variants.map(variant => ({ file, ...variant })));
+    byId("queue-panel").scrollIntoView({ behavior: "smooth", block: "nearest" });
+    showToast(`${variants.length} exports queued. Select Convert queue to begin.`);
+  } catch (error) { showToast(error instanceof Error ? error.message : "Could not queue exports.", true); }
+});
 
 resetButton.addEventListener("click", () => {
   resetControls();
@@ -851,6 +879,15 @@ downloadButton.addEventListener("click", () => {
   document.body.append(anchor);
   anchor.click();
   anchor.remove();
+});
+
+byId<HTMLButtonElement>("copy-image-button").addEventListener("click", async () => {
+  if (!resultBlob) return;
+  const button = byId<HTMLButtonElement>("copy-image-button");
+  button.disabled = true;
+  try { await copyImage(resultBlob); showToast("Image copied as PNG."); }
+  catch (error) { showToast(error instanceof Error && error.name !== "NotAllowedError" ? error.message : "Allow clipboard access or download the image instead.", true); }
+  finally { button.disabled = false; }
 });
 
 copyUrlButton.addEventListener("click", async () => {
