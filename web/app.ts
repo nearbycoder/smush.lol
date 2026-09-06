@@ -299,6 +299,7 @@ function remoteTransformUrl(source: string, fields?: FormData): string {
   for (const dimension of ["width", "height"] as const) {
     if (values[dimension]) endpoint.searchParams.set(dimension, values[dimension]);
   }
+  setWhenChanged("targetKB", "");
   setWhenChanged("format", "webp");
   if (values.format !== "png") setWhenChanged("quality", "82");
   setWhenChanged("fit", "inside");
@@ -589,7 +590,12 @@ function selectedFormat(): "webp" | "jpeg" | "png" {
 
 function updateFormatSettings(): void {
   const format = selectedFormat();
-  qualitySettings.hidden = format === "png" || (format === "webp" && controls.querySelector<HTMLInputElement>('input[name="lossless"]')!.checked);
+  const fixedQuality = format === "png" || (format === "webp" && controls.querySelector<HTMLInputElement>('input[name="lossless"]')!.checked);
+  qualitySettings.hidden = fixedQuality;
+  byId<HTMLInputElement>("target-size").disabled = fixedQuality;
+  byId("target-hint").textContent = fixedQuality
+    ? "Target size is available for JPEG and lossy WebP."
+    : "Adjust quality to fit under this limit (1 KB = 1024 bytes). Smaller dimensions may be needed.";
   pngSettings.hidden = format !== "png";
   losslessRow.hidden = format !== "webp";
   progressiveRow.hidden = format !== "jpeg";
@@ -666,7 +672,7 @@ saveSettingsButton.addEventListener("click", () => {
   if (!controls.reportValidity()) return;
   const fields: Record<string, string> = {};
   controls.querySelectorAll<HTMLInputElement | HTMLSelectElement>("input[name], select[name]").forEach(input => {
-    if (input instanceof HTMLInputElement && input.type === "radio" && !input.checked) return;
+    if (input.disabled || (input instanceof HTMLInputElement && input.type === "radio" && !input.checked)) return;
     fields[input.name] = input instanceof HTMLInputElement && input.type === "checkbox" ? String(input.checked) : input.value;
   });
   try {
@@ -782,6 +788,7 @@ controls.addEventListener("submit", async (event) => {
       resultSummary.textContent = formatBytes(blob.size);
     }
 
+    if (payload.get("targetKB")) resultSummary.textContent += ` · quality ${response.headers.get("x-image-quality") ?? "auto"}`;
     resultTab.disabled = false;
     compareTab.disabled = false;
     resultBar.hidden = false;

@@ -35,6 +35,7 @@
 - Save, reuse, and forget your preferred settings in this browser (no images or URLs are saved)
 - Keep chosen settings when replacing an image; use Reset to return to defaults
 - Inspect original and converted images with a keyboard-accessible comparison slider
+- Set a target file size for JPEG or lossy WebP; quality adjusts without silently resizing
 - Tune quality, lossless WebP, PNG compression, palette colors, and dithering
 - Preview before/after size and dimensions, then download the result
 - Copy a reusable transformation URL for remote images
@@ -110,6 +111,7 @@ Remote sources are limited to 15 MB, three redirects, and a ten-second fetch. Lo
 | `flip`, `flop` | boolean form values | `false` |
 | `brightness`, `saturation` | `0`–`3` | `1` |
 | `format` | `webp`, `jpeg`, `png` | `webp` |
+| `targetKB` | `1`–`15360`; JPEG / lossy WebP, 1024 bytes per KB | none |
 | `quality` | `1`–`100` | `82` |
 
 Both endpoints support the same transform fields. The response body is the transformed image. Headers include the output dimensions, format, Bun version, and a safe output filename.
