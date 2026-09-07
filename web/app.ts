@@ -1,3 +1,4 @@
+import { mountCollections } from "./collections";
 import { mountEffects } from "./effect-editor";
 import { localResponse, usesBrowser, safeSource } from "./local-image";
 import { copyImage } from "./clipboard";
@@ -946,3 +947,10 @@ byId("local-only").addEventListener("change", () => { conversionRequest.cancel()
 controls.addEventListener("change", updateFormatSettings);
 byId("operation-cancel").addEventListener("click", () => { conversionRequest.cancel(); setBusy(false); showToast("Conversion cancelled."); });
 document.addEventListener("processing-progress", event => { byId("operation-progress").textContent = (event as CustomEvent<string>).detail; });
+
+mountCollections(results => {
+  if (queue.jobs.length) return queue.jobs.flatMap(job => results ? (job.result ? [{ name: job.result.filename, file: new File([job.result.blob], job.result.filename, { type: job.result.blob.type }) }] : []) : [{ name: job.file.name, file: job.file }]);
+  if (results) return resultBlob ? [{ name: resultFilename, file: new File([resultBlob], resultFilename, { type: resultBlob.type }) }] : [];
+  const file = selectedFile ?? remoteSourceFile;
+  return file ? [{ name: file.name, file }] : [];
+}, showToast);
