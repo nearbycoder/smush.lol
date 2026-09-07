@@ -215,6 +215,9 @@
               <button id="use-settings" type="button" class="text-link" disabled>Use recipe</button>
               <button id="forget-settings" type="button" class="text-link" disabled>Delete recipe</button>
             </div>
+            <div class="saved-settings"><button id="recipe-export" type="button" class="text-link">Export recipes</button><button id="recipe-import" type="button" class="text-link">Import recipes</button></div>
+            <input id="recipe-import-file" type="file" accept="application/json,.json" aria-label="Import recipe JSON" hidden />
+            <p class="settings-note">Back up or transfer settings as JSON (up to 256 KB). Import keeps existing recipes and numbers duplicate names. Choose “Use recipe” to apply one.</p>
             <p class="settings-note">Up to 20 recipes in this browser. Saving an existing name updates it. No images or URLs are saved.</p>
           </section>
 

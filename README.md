@@ -198,3 +198,5 @@ Pixel-art resizing uses nearest-neighbor sampling. 2×, 4×, and 8× shortcuts a
 Transparent-edge trimming scans the cropped source before resizing. Set an alpha threshold (0–254) and retained margin (0–512 source pixels); margins stay inside the source. The cancellable scan supports up to 12 megapixels and reports entirely transparent inputs rather than creating an empty export.
 
 Duotone mapping blends shadows and highlights between two chosen colors with adjustable strength. Navy/gold, plum/lilac, and forest/mint presets are included. Mapping follows exposure and color filters, preserves transparency, and precedes sharpening and watermarks.
+
+Recipe JSON export/import backs up and transfers all saved recipes without accounts. Imports validate the whole file before writing, regenerate IDs, number colliding names, and respect the 20-recipe/256-KB limits. Existing recipes remain intact; importing does not apply settings automatically.

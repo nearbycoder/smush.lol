@@ -1,3 +1,4 @@
+import { mountRecipeTransfer } from "./recipe-transfer";
 import { mountToolbox } from "./toolbox";
 import { mountHistory } from "./history";
 import { mountMetadata } from "./metadata";
@@ -1016,3 +1017,5 @@ document.querySelectorAll<HTMLButtonElement>("[data-duotone]").forEach(button =>
   controls.querySelector<HTMLInputElement>('[name="duotoneAmount"]')!.value = "100";
   refreshControls(); showToast("Duotone palette applied. Convert to update the result.");
 }));
+
+mountRecipeTransfer(refreshSavedSettings, showToast);
