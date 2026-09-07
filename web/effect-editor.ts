@@ -1,3 +1,4 @@
+import { redactionPreviewFields } from "./redaction-preview";
 import { renderImage, decodeSource, canvasBlob } from "./local-image";
 import { paintEffects } from "./effects";
 import { redactions, type Redaction } from "./effect-settings";
@@ -14,13 +15,13 @@ export function mountEffects(form: HTMLFormElement, source: () => File | null, n
     canvas.width = base.width; canvas.height = base.height;
     canvas.getContext("2d")!.drawImage(base, 0, 0);
     await paintEffects(canvas, { redactions: JSON.stringify(draft) }, controller.signal);
-    el("redact-count").textContent = `${draft.length} regions · Applied after crop, rotation and resize. Queue images use the same relative regions.`;
+    el("redact-count").textContent = `${draft.length} regions · Applied after crop, trim, rotation and resize, before borders and corners. Queue images use the same relative regions.`;
   }
   el("redact-open").addEventListener("click", async () => {
     const file = source(); if (!file) { notify("Choose an image first."); return; }
     controller.abort(); controller = new AbortController(); const signal = controller.signal;
     try {
-      base = await renderImage(file, { ...formFields(form), removeBackground: "false", redactions: "[]", watermarkText: "", watermarkLogo: "", width: "1000", height: "650", fit: "inside", withoutEnlargement: "true" }, signal);
+      base = await renderImage(file, redactionPreviewFields(formFields(form)), signal);
       if (signal.aborted || source() !== file) return;
       draft = redactions(field("redactions").value); await draw(); dialog.showModal();
     } catch (error) { if (!signal.aborted) notify((error as Error).message, true); }
