@@ -1,3 +1,4 @@
+import { paintPixelEffects } from "./pixel-effects";
 import { hasFinishing } from "./finishing-settings";
 import { finishCanvas } from "./finishing";
 import { hasEffects } from "./effect-settings";
@@ -65,7 +66,7 @@ export async function renderImage(file: File, fields: Record<string, string>, si
     ctx.imageSmoothingQuality = "high";
     const dw = rotated ? height : width, dh = rotated ? width : height;
     ctx.drawImage(image, rect.x, rect.y, rect.width, rect.height, -dw / 2, -dh / 2, dw, dh); ctx.restore();
-    try { await paintEffects(canvas, fields, signal); signal.throwIfAborted(); canvas = finishCanvas(canvas, fields); return canvas; } catch (error) { canvas.width = canvas.height = 0; throw error; }
+    try { await paintPixelEffects(canvas, fields, signal); await paintEffects(canvas, fields, signal); signal.throwIfAborted(); canvas = finishCanvas(canvas, fields); return canvas; } catch (error) { canvas.width = canvas.height = 0; throw error; }
   } finally { release(); }
 }
 export const canvasBlob = (canvas: HTMLCanvasElement, type = "image/png", quality?: number) => new Promise<Blob>((resolve, reject) => canvas.toBlob(blob => blob && blob.type === type ? resolve(blob) : reject(new Error(`This browser cannot encode ${type}.`)), type, quality));
