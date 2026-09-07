@@ -53,7 +53,7 @@
               id="file-input"
               type="file"
               multiple
-              accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/heic,image/heif,image/avif,image/tiff"
+              accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/heic,image/heif,image/avif,image/tiff,image/svg+xml,.svg"
               hidden
             />
             <div class="drop-visual" aria-hidden="true">
@@ -72,7 +72,7 @@
             </div>
             <h2>Choose an image</h2>
             <p id="drop-help">Drop it here or <button id="browse-button" class="text-link" type="button">choose a file</button></p>
-            <span class="file-note">JPEG, PNG, WebP, GIF, BMP, HEIC, AVIF or TIFF · up to 15 MB</span>
+            <span class="file-note">JPEG, PNG, WebP, GIF, BMP, HEIC, AVIF, TIFF or SVG · up to 15 MB</span>
 
             <div class="source-divider"><span>or use a URL</span></div>
             <form id="url-form" class="url-form">
@@ -213,6 +213,8 @@
             <p class="settings-note">Up to 20 recipes in this browser. Saving an existing name updates it. No images or URLs are saved.</p>
           </section>
 
+          <label class="check-row"><span><strong>Browser-only processing</strong><small>Files stay on this device. Applies to the editor and queue.</small></span><input id="local-only" name="localOnly" type="checkbox" value="true" /><i aria-hidden="true"></i></label>
+          <p id="local-encoding-note" class="settings-note" hidden>Local encoding uses browser resampling, standard JPEG and PNG compression. Server encoding options are disabled. SVG and AVIF always process locally.</p>
           <section class="crop-settings">
             <div class="queue-actions"><button id="crop-open" type="button" class="small-button">Crop image</button><button id="crop-remove" type="button" class="small-button" disabled>Remove crop</button></div>
             <p id="crop-summary" class="settings-note">No crop. Cropping happens before resize and rotation.</p>
@@ -268,6 +270,7 @@
               <label><input type="radio" name="format" value="png" /><span>PNG<small>Transparency</small></span></label>
             </div>
 
+            <label class="avif-option"><input type="radio" name="format" value="avif" /> AVIF <small>Local encoder · smaller photos</small></label>
             <div id="quality-settings" class="format-settings">
               <label class="range-control">
                 <span class="range-label"><span>Quality</span><output id="quality-value">82</output></span>
@@ -401,7 +404,7 @@
               <label for="export-widths">Maximum widths in pixels, separated by commas</label>
               <input id="export-widths" type="text" value="320, 800, 1600" maxlength="100" />
               <label><input id="export-original" type="checkbox" checked /> Include original size</label>
-              <fieldset><legend>Formats</legend><label><input type="checkbox" data-export-format="webp" checked /> WebP</label><label><input type="checkbox" data-export-format="jpeg" /> JPEG</label><label><input type="checkbox" data-export-format="png" /> PNG</label></fieldset>
+              <fieldset><legend>Formats</legend><label><input type="checkbox" data-export-format="webp" checked /> WebP</label><label><input type="checkbox" data-export-format="jpeg" /> JPEG</label><label><input type="checkbox" data-export-format="png" /> PNG</label><label><input type="checkbox" data-export-format="avif" /> AVIF</label></fieldset>
               <p class="settings-note">Uses the selected source and current edits. Widths keep the image ratio. Target size applies only to JPEG and lossy WebP.</p>
               <button id="queue-exports" type="button" class="small-button">Queue these exports</button>
             </div>

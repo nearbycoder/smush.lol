@@ -142,3 +142,9 @@ Cropping and JPEG background fill use the browser canvas before uploading a loss
 ## Privacy model
 
 Image bytes are held only for the lifetime of the HTTP request. The server does not write uploads or remote images to disk, a database, object storage, analytics, or application logs. Upload responses use `Cache-Control: no-store`; remote transformation responses may be cached by clients for one hour.
+
+### Private conversion and vector input
+
+The editor and batch queue can process files entirely in the browser. Browser-only mode prevents new source-URL fetches and image API uploads; queued recipes also respect the active privacy toggle. Resetting controls or applying recipes keeps an enabled privacy toggle on. Models/codecs may still download; image bytes stay local. Browser-supported inputs include self-contained SVG paths/shapes, rasterized at the chosen output dimensions. SVG scripts, external references and embedded images are rejected.
+
+AVIF exports always use a local jSquash WASM worker, as do local WebP exports (including lossless). Workers terminate on cancellation. PNG/JPEG use the browser encoder; resampling, progressive JPEG and PNG palette/compression controls are disabled for local processing. The HTTP API continues to support JPEG, PNG and WebP. Initial AVIF/WebP codec downloads are self-hosted under `/codecs/` and only requested when used.

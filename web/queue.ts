@@ -1,3 +1,4 @@
+import { usesBrowser, localResponse } from "./local-image";
 import { prepareImage } from "./prepare-image";
 export type ExportFields = Record<string, string>;
 export interface ExportResult { blob: Blob; filename: string }
@@ -124,6 +125,10 @@ export function formFields(form: HTMLFormElement): ExportFields {
 }
 
 export async function convertFile(file: File, fields: ExportFields, signal: AbortSignal): Promise<ExportResult> {
+  if (usesBrowser(file, fields)) {
+    const response = await localResponse(file, fields, signal);
+    return { blob: await response.blob(), filename: response.headers.get("content-disposition")!.match(/filename="([^"]+)"/)![1]! };
+  }
   file = await prepareImage(file, fields, signal);
   const body = new FormData();
   for (const [key, value] of Object.entries(fields)) body.set(key, value);
