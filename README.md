@@ -170,3 +170,5 @@ Open **Contact sheet / PDF** to combine queued images (or the current image if t
 The Image toolbox operates locally on the original source or current export. Color palette extraction samples up to 256px, excludes pixels below 50% opacity, groups similar RGB colors and exports up to 12 dominant colors as CSS variables. Percentages refer to all visible sampled pixels.
 
 Pixel color picker supports clicking the rendered image or entering exact X/Y coordinates, displays RGBA and eight-digit HEX, and copies the selected color. Its raster is capped at 12,000px per side; alpha is preserved.
+
+Histogram & statistics shows RGB or luminance distributions, mean luminance, transparency exclusions and black/white counts from a bounded 1024px sample. Download all 256 bins as CSV.
