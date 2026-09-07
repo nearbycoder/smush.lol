@@ -14,7 +14,7 @@ export function mountToolbox(source: (result: boolean) => File | null, files: (r
   el("toolbox-cancel").onclick = clear;
   el("toolbox-run").onclick = async () => {
     clear(); controller = new AbortController(); const signal = controller.signal;
-    const result = el<HTMLSelectElement>("toolbox-source").value === "result", file = source(result);
+    const result = el<HTMLSelectElement>("toolbox-source").value === "result", file = source(result) ?? files(result)[0];
     if (!file) { el("toolbox-status").textContent = "Choose an image or create an export first."; return; }
     const tool = imageTools[select.value as keyof typeof imageTools];
     el<HTMLButtonElement>("toolbox-run").disabled = true; el("toolbox-status").textContent = "Working locally…";

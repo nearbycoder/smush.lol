@@ -180,3 +180,5 @@ Favicon pack produces transparent-padded or center-cropped square PNGs at 16/32/
 Social image pack exports four named dimensions (1080px square, 1080×1350 portrait, 1080×1920 story, 1200×630 landscape), individually or together. Choose center crop or contain with a custom background, and JPEG quality 90 or PNG. Every file is named with its dimensions.
 
 Split image into tiles exports a full-resolution 1–10 row/column PNG grid with a JSON coordinate map. Integer boundaries preserve every source pixel even for uneven dimensions. Each tile must fit within 12,000px per side; encoded data is capped at 100 MB.
+
+Sprite sheet combines up to 50 queued originals/completed exports (or the current image) into a transparent PNG atlas. Choose cell size, columns and spacing; images fit without cropping. ZIP includes numbered CSS classes and a JSON map retaining source names. Pixel and byte budgets reject oversized sheets before download.
