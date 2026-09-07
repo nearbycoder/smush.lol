@@ -158,6 +158,7 @@
           </div>
 
           <div class="queue-entry">
+            <button id="metadata-open" type="button" class="small-button">Inspect metadata</button>
             <button id="collection-open" type="button" class="small-button">Contact sheet / PDF</button>
             <button id="queue-add" type="button" class="small-button">Add images to queue</button>
             <input id="queue-input" type="file" accept="image/*" multiple hidden />
@@ -194,6 +195,8 @@
             <button id="reset-button" class="reset-button" type="button">Reset</button>
           </div>
 
+          <div class="history-controls"><button id="undo-settings" type="button" class="small-button" disabled>↶ Undo</button><button id="redo-settings" type="button" class="small-button" disabled>↷ Redo</button><small>Settings &amp; crop · Ctrl/⌘ Z</small></div>
+          <p id="history-status" class="settings-note" aria-live="polite"></p>
           <section class="quick-export" aria-labelledby="quick-export-heading">
             <h3 id="quick-export-heading">Quick export</h3>
             <div class="export-presets">
@@ -403,7 +406,7 @@
             <summary><span>Image editing tools</span><small>Cutouts, redaction &amp; watermarks</small><i aria-hidden="true">＋</i></summary>
             <div class="tool-content">
               <label><input name="removeBackground" id="remove-background" type="checkbox" value="true" /> Remove background</label>
-              <p class="settings-note">Isolate people or products locally. First use downloads a 219 MB model from Hugging Face plus its runtime. May take a minute; sources up to 12 megapixels. Choose PNG, WebP or AVIF for transparency.</p>
+              <p class="settings-note">Isolate people or products locally. First use downloads a 219 MB model from Hugging Face plus its runtime. May take several minutes on a CPU; sources up to 12 megapixels. Choose PNG, WebP or AVIF for transparency.</p>
               <button type="button" class="small-button" id="redact-open">Blur / redact regions</button>
               <input type="hidden" name="redactions" value="[]" />
               <label>Watermark text <input name="watermarkText" maxlength="120" placeholder="© Your name" /></label>
@@ -454,6 +457,14 @@
       </div>
     </footer>
 
+    <dialog id="metadata-dialog" aria-labelledby="metadata-title">
+      <h2 id="metadata-title">Image metadata</h2>
+      <div class="tool-content"><label>Inspect <select id="metadata-source"><option value="source">Original source</option><option value="result">Current export</option></select></label></div>
+      <p id="metadata-status" aria-live="polite"></p>
+      <p class="settings-note">Read locally. Up to 300 readable tags are shown, including camera, orientation, ICC profile and GPS when present. Binary thumbnails and raw maker data are omitted. Compare the export to see which tags remain.</p>
+      <div class="metadata-scroll"><table><caption class="visually-hidden">Readable image metadata</caption><tbody id="metadata-body"></tbody></table></div>
+      <div class="queue-actions"><button id="metadata-download" type="button" class="small-button" disabled>Download metadata JSON</button><button id="metadata-close" type="button" class="small-button">Close</button></div>
+    </dialog>
     <dialog id="collection-dialog" aria-labelledby="collection-title">
       <h2 id="collection-title">Contact sheet &amp; images to PDF</h2>
       <p>Uses the queue, or the current image when the queue is empty. Everything is generated on this device.</p>

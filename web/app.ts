@@ -1,3 +1,5 @@
+import { mountHistory } from "./history";
+import { mountMetadata } from "./metadata";
 import { mountCollections } from "./collections";
 import { mountEffects } from "./effect-editor";
 import { localResponse, usesBrowser, safeSource } from "./local-image";
@@ -104,6 +106,8 @@ const sourceRequest = new LatestRequest();
 const conversionRequest = new LatestRequest();
 let resultSettings: string | null = null;
 let toastTimer: number | undefined;
+let editHistory: { reset(): void } | undefined;
+let metadataInspector: { sourceChanged(): void } | undefined;
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -239,7 +243,9 @@ for (const tab of [originalTab, resultTab, compareTab]) {
 }
 
 async function loadFile(file: File): Promise<void> {
-  try { const safe = await safeSource(file); if (safe !== file) file = new File([safe], file.name, { type: safe.type }); } catch (error) { showToast((error as Error).message, true); return; }
+  const signal = sourceRequest.start();
+  try { const safe = await safeSource(file); if (safe !== file) file = new File([safe], file.name, { type: safe.type }); } catch (error) { if (!signal.aborted) showToast((error as Error).message, true); return; }
+  if (signal.aborted) return;
   if (!isSupportedImage(file)) {
     showToast("Choose a supported image file.", true);
     return;
@@ -251,7 +257,8 @@ async function loadFile(file: File): Promise<void> {
 
   cropEditor.sourceChanged();
   effectEditor.sourceChanged();
-  const signal = sourceRequest.start();
+  metadataInspector?.sourceChanged();
+  editHistory?.reset();
   conversionRequest.cancel();
   setBusy(false);
   urlButton.disabled = false;
@@ -370,6 +377,8 @@ async function loadRemoteImage(value: string): Promise<void> {
 
   cropEditor.sourceChanged();
   effectEditor.sourceChanged();
+  metadataInspector?.sourceChanged();
+  editHistory?.reset();
   const signal = sourceRequest.start();
   conversionRequest.cancel();
   setBusy(false);
@@ -443,6 +452,8 @@ urlForm.addEventListener("submit", (event) => {
 replaceButton.addEventListener("click", () => {
   cropEditor.sourceChanged();
   effectEditor.sourceChanged();
+  metadataInspector?.sourceChanged();
+  editHistory?.reset();
   remoteSourceFile = null;
   sourceRequest.cancel();
   conversionRequest.cancel();
@@ -942,7 +953,13 @@ window.addEventListener("beforeunload", () => {
 
 resetControls();
 
-byId("local-only").addEventListener("change", () => { conversionRequest.cancel(); sourceRequest.cancel(); setBusy(false); queue.cancelAll(); updateFormatSettings(); });
+byId("local-only").addEventListener("change", () => {
+  conversionRequest.cancel();
+  if (urlButton.textContent === "Loading…") { sourceRequest.cancel(); urlButton.disabled = false; urlButton.textContent = "Load"; }
+  setBusy(false);
+  for (const job of queue.jobs) if (job.status === "processing" || job.status === "queued") queue.cancel(job.id);
+  updateFormatSettings();
+});
 
 controls.addEventListener("change", updateFormatSettings);
 byId("operation-cancel").addEventListener("click", () => { conversionRequest.cancel(); setBusy(false); showToast("Conversion cancelled."); });
@@ -954,3 +971,20 @@ mountCollections(results => {
   const file = selectedFile ?? remoteSourceFile;
   return file ? [{ name: file.name, file }] : [];
 }, showToast);
+
+metadataInspector = mountMetadata(result => result ? (resultBlob ? new File([resultBlob], resultFilename, { type: resultBlob.type }) : null) : selectedFile ?? remoteSourceFile);
+editHistory = mountHistory(controls, () => {
+  const fields: Record<string, string> = {};
+  for (const input of Array.from(controls.querySelectorAll<HTMLInputElement | HTMLSelectElement>("input[name], select[name]"))) {
+    if (input.name === "localOnly" || (input instanceof HTMLInputElement && input.type === "radio" && !input.checked)) continue;
+    fields[input.name] = input instanceof HTMLInputElement && input.type === "checkbox" ? String(input.checked) : input.value;
+  }
+  return { fields, ratioLocked, background: byId<HTMLInputElement>("background-enabled").checked };
+}, state => {
+  conversionRequest.cancel(); setBusy(false);
+  ratioLocked = state.ratioLocked;
+  applyFields(state.fields);
+  byId<HTMLInputElement>("background-enabled").checked = state.background;
+  byId("watermark-logo-note").textContent = state.fields.watermarkLogo ? "Logo restored from editing history." : "No logo. Text is used when no logo is selected.";
+  refreshControls();
+});

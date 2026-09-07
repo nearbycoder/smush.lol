@@ -158,3 +158,9 @@ Blur/redaction supports up to 30 relative rectangular regions, applied after cro
 ### Contact sheets and PDF
 
 Open **Contact sheet / PDF** to combine queued images (or the current image if the queue is empty). Choose completed exports to include applied edits, or source images for the originals. Move or remove entries to control order. Contact sheets offer 1–6 columns, filename labels and a 400–4800px width; oversized canvases are rejected before allocation. PDFs place one image per page with A4, US Letter or 96 dpi image-sized pages, portrait/landscape paper and 0–72 point margins. PDF image data is limited to 2400px per side, 50 pages and 100 MB. Generation stays local, supports cancellation, and loads the PDF library only when needed.
+
+### Metadata and edit history
+
+**Inspect metadata** reads the original or current export locally and shows up to 300 readable tags, including camera settings, orientation, ICC profiles and GPS coordinates when present. Download the displayed values as JSON. Raw binary payloads and thumbnails are omitted, and unsupported/malformed metadata is reported explicitly. The parser is loaded on demand.
+
+**Undo / Redo** restores settings, crop regions, redactions and watermarks. Use the buttons or Ctrl/⌘ Z (Shift Z or Ctrl Y to redo) outside text fields and dialogs. History is bounded to 50 snapshots / 8 MB, stays in memory, and resets when replacing the source. Browser-only privacy mode is independent of undo and remains enabled through resets/recipes. Restoring settings cancels an in-flight conversion; convert again to update the output. Browser tooling dependencies are installed only in the build stage, keeping them out of the production server dependency tree.
