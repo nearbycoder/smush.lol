@@ -18,3 +18,12 @@ test("exposure and contrast have neutral defaults, clamp extremes and round-trip
  expect(savedSettings({exposure:"-1.5",contrast:"120"},true).fields.exposure).toBe("-1.5");
  expect(()=>savedSettings({exposure:"4"},true)).toThrow();
 });
+
+test("sharpening enhances edges while preserving flat areas and transparency",()=>{
+ const input = new Uint8ClampedArray([80,80,80,255,100,100,100,255,80,80,80,255]);
+ expect([...adjustPixels(input,3,1,{sharpen:"100"})]).toEqual([60,60,60,255,140,140,140,255,60,60,60,255]);
+ expect(pixel([100,100,100,128],{sharpen:"100"})).toEqual([100,100,100,128]);
+ const edge = new Uint8ClampedArray([100,100,100,255,0,0,0,0]);
+ expect([...adjustPixels(edge,2,1,{sharpen:"200"})]).toEqual([100,100,100,255,0,0,0,0]);
+ expect(savedSettings({sharpen:"40"},true).fields.sharpen).toBe("40");
+});
