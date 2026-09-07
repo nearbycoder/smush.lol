@@ -174,3 +174,5 @@ Pixel color picker supports clicking the rendered image or entering exact X/Y co
 Histogram & statistics shows RGB or luminance distributions, mean luminance, transparency exclusions and black/white counts from a bounded 1024px sample. Download all 256 bins as CSV.
 
 Print size & DPI calculates print dimensions in inches/centimeters, effective DPI at a desired width and the required pixel dimensions at a chosen DPI. It reports when the source falls short and exports a text report without altering pixels or metadata.
+
+Favicon pack produces transparent-padded or center-cropped square PNGs at 16/32/48/180/192/512px, a three-size PNG-backed ICO, and an HTML link snippet in a ZIP. The source/export choice controls whether prior edits are included.
