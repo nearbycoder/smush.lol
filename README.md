@@ -200,3 +200,5 @@ Transparent-edge trimming scans the cropped source before resizing. Set an alpha
 Duotone mapping blends shadows and highlights between two chosen colors with adjustable strength. Navy/gold, plum/lilac, and forest/mint presets are included. Mapping follows exposure and color filters, preserves transparency, and precedes sharpening and watermarks.
 
 Recipe JSON export/import backs up and transfers all saved recipes without accounts. Imports validate the whole file before writing, regenerate IDs, number colliding names, and respect the 20-recipe/256-KB limits. Existing recipes remain intact; importing does not apply settings automatically.
+
+Queue ordering supports natural filename sorting, source-size sorting, restoring addition order, and keyboard-accessible move-up/down actions. Order controls lock while processing; the chosen order carries into conversion and ZIP exports.

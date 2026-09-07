@@ -39,6 +39,23 @@ export class ConversionQueue {
     this.changed();
   }
 
+  get canReorder(): boolean { return !this.running && !this.jobs.some(job => ["queued", "processing"].includes(job.status)); }
+
+  move(id: number, direction: -1 | 1): boolean {
+    if (!this.canReorder) return false;
+    const index = this.jobs.findIndex(job => job.id === id), target = index + direction;
+    if (index < 0 || target < 0 || target >= this.jobs.length) return false;
+    [this.jobs[index], this.jobs[target]] = [this.jobs[target]!, this.jobs[index]!];
+    this.changed(); return true;
+  }
+
+  sort(order: string): boolean {
+    if (!this.canReorder || !["added", "name-asc", "name-desc", "size-asc", "size-desc"].includes(order)) return false;
+    const sign = order.endsWith("desc") ? -1 : 1;
+    this.jobs.sort((a, b) => (order === "added" ? a.id-b.id : order.startsWith("size") ? (a.file.size-b.file.size)*sign : a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" })*sign) || a.id-b.id);
+    this.changed(); return true;
+  }
+
   start(fields: ExportFields): Promise<void> {
     for (const job of this.jobs) if (job.status === "ready") {
       job.fields ??= { ...fields };
