@@ -6,7 +6,7 @@ export function exportVariants(widthsText: string, formats: string[], original: 
   if (widths.some(width => !Number.isInteger(width) || width < 1 || width > MAX_DIMENSION)) {
     throw new Error("Enter comma-separated widths from 1 to 12,000px.");
   }
-  if (!formats.length || formats.some(format => !["webp", "jpeg", "png"].includes(format))) throw new Error("Choose at least one export format.");
+  if (!formats.length || formats.some(format => !["webp", "jpeg", "png", "avif"].includes(format))) throw new Error("Choose at least one export format.");
   const sizes: Array<number | undefined> = [...widths, ...(original ? [undefined] : [])];
   if (!sizes.length) throw new Error("Choose at least one width or include the original size.");
   if (sizes.length * formats.length > 50) throw new Error("Choose 50 exports or fewer.");

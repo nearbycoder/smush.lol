@@ -11,7 +11,7 @@ export function mountQueue(form: HTMLFormElement, notify: (message: string, erro
   const cancel = document.querySelector<HTMLButtonElement>("#queue-cancel")!;
   const archive = document.querySelector<HTMLButtonElement>("#queue-zip")!;
   let archiving = false;
-  const queue = new ConversionQueue(process, render);
+  const queue = new ConversionQueue((file, fields, signal) => process(file, formFields(form).localOnly ? { ...fields, localOnly: "true" } : fields, signal), render);
   function render() {
     panel.hidden = queue.jobs.length === 0;
     const done = queue.jobs.filter(job => job.status === "done");

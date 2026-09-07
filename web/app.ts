@@ -1,3 +1,4 @@
+import { localResponse, usesBrowser, safeSource } from "./local-image";
 import { copyImage } from "./clipboard";
 import { exportVariants } from "./export-variants";
 import { loadRecipes, saveRecipe, writeRecipes } from "./recipes";
@@ -152,7 +153,7 @@ function showToast(message: string, isError = false): void {
 }
 
 function isSupportedImage(file: File): boolean {
-  return file.type.startsWith("image/") || /\.(jpe?g|png|webp|gif|bmp|heic|heif|avif|tiff?)$/i.test(file.name);
+  return file.type.startsWith("image/") || /\.(jpe?g|png|webp|gif|bmp|heic|heif|avif|tiff?|svg)$/i.test(file.name);
 }
 
 async function getImageDimensions(blob: Blob, existingUrl?: string): Promise<{ width: number; height: number }> {
@@ -235,6 +236,7 @@ for (const tab of [originalTab, resultTab, compareTab]) {
 }
 
 async function loadFile(file: File): Promise<void> {
+  try { const safe = await safeSource(file); if (safe !== file) file = new File([safe], file.name, { type: safe.type }); } catch (error) { showToast((error as Error).message, true); return; }
   if (!isSupportedImage(file)) {
     showToast("Choose a supported image file.", true);
     return;
@@ -278,6 +280,7 @@ async function loadFile(file: File): Promise<void> {
   previewShell.hidden = false;
   smushButton.disabled = false;
   updateCropSummary();
+  updateFormatSettings();
   controlHint.textContent = "Ready to convert. The original file will not be changed.";
   setView("original");
 }
@@ -352,6 +355,7 @@ async function responseError(response: Response, fallback: string): Promise<Erro
 }
 
 async function loadRemoteImage(value: string): Promise<void> {
+  if (byId<HTMLInputElement>("local-only").checked) { showToast("Choose a file from your device in browser-only mode.", true); return; }
   let source: string;
   try {
     source = normalizedRemoteUrl(value.trim());
@@ -612,13 +616,16 @@ wireRange(qualityInput, "quality-value", (value) => String(value));
 wireRange(compressionInput, "compression-value", (value) => String(value));
 wireRange(colorsInput, "colors-value", (value) => String(value));
 
-function selectedFormat(): "webp" | "jpeg" | "png" {
+function selectedFormat(): "webp" | "jpeg" | "png" | "avif" {
   const selected = controls.querySelector<HTMLInputElement>('input[name="format"]:checked');
-  return selected?.value === "jpeg" || selected?.value === "png" ? selected.value : "webp";
+  return selected?.value === "jpeg" || selected?.value === "png" || selected?.value === "avif" ? selected.value : "webp";
 }
 
 function updateFormatSettings(): void {
   const format = selectedFormat();
+  const local = usesBrowser(selectedFile, formFields(controls));
+  byId("local-encoding-note").hidden = !local;
+  for (const name of ["progressive", "compressionLevel", "palette", "colors", "dither", "filter"]) controls.querySelector<HTMLInputElement | HTMLSelectElement>(`[name="${name}"]`)!.disabled = local;
   byId("background-settings").hidden = format !== "jpeg";
   byId<HTMLInputElement>("background-color").disabled = format !== "jpeg" || !byId<HTMLInputElement>("background-enabled").checked;
   const fixedQuality = format === "png" || (format === "webp" && controls.querySelector<HTMLInputElement>('input[name="lossless"]')!.checked);
@@ -659,7 +666,9 @@ function refreshControls(): void {
 }
 
 function resetControls(): void {
+  const localMode = byId<HTMLInputElement>("local-only").checked;
   controls.reset();
+  byId<HTMLInputElement>("local-only").checked = localMode;
   widthInput.value = "";
   heightInput.value = "";
   ratioLocked = true;
@@ -678,6 +687,7 @@ function applyFields(fields: Record<string, string>): void {
   controls.querySelectorAll<HTMLInputElement | HTMLSelectElement>("input[name], select[name]").forEach(input => {
     const value = fields[input.name];
     if (value === undefined) return;
+    if (input.name === "localOnly" && byId<HTMLInputElement>("local-only").checked) return;
     if (input.name === "background") {
       byId<HTMLInputElement>("background-enabled").checked = Boolean(value);
       input.value = value || "#ffffff";
@@ -805,11 +815,16 @@ controls.addEventListener("submit", async (event) => {
 
   try {
     const fields = formFields(controls);
+    const local = usesBrowser(selectedFile, fields);
     const prepare = needsPreparation(fields);
-    const requestUrl = selectedRemoteUrl && !prepare ? remoteTransformUrl(selectedRemoteUrl, payload) : null;
+    const requestUrl = selectedRemoteUrl && !prepare && !local ? remoteTransformUrl(selectedRemoteUrl, payload) : null;
     let response: Response;
 
-    if (selectedFile || prepare) {
+    if (local) {
+      const source = selectedFile ?? remoteSourceFile;
+      if (!source) throw new Error("Choose a source image.");
+      response = await localResponse(source, fields, signal);
+    } else if (selectedFile || prepare) {
       const source = selectedFile ?? remoteSourceFile;
       if (!source) throw new Error("Reload the source image before converting.");
       const prepared = await prepareImage(source, fields, signal);
@@ -863,7 +878,7 @@ controls.addEventListener("submit", async (event) => {
     compareTab.disabled = false;
     resultBar.hidden = false;
     setView("result");
-    showToast(`Image converted with Bun ${response.headers.get("x-bun-version") ?? "1.4"}.`);
+    showToast(local ? "Converted entirely in your browser." : `Image converted with Bun ${response.headers.get("x-bun-version") ?? "1.4"}.`);
   } catch (error) {
     if (!signal.aborted) showToast(error instanceof Error ? error.message : "The image could not be converted.", true);
   } finally {
@@ -915,3 +930,5 @@ window.addEventListener("beforeunload", () => {
 });
 
 resetControls();
+
+byId("local-only").addEventListener("change", () => { conversionRequest.cancel(); sourceRequest.cancel(); setBusy(false); queue.cancelAll(); updateFormatSettings(); });

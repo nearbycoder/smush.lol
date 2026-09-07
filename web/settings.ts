@@ -16,10 +16,10 @@ export interface SavedSettings {
 
 /** Normalize known transform fields only; never persist images or source URLs. */
 export function savedSettings(fields: Record<string, string>, ratioLocked: boolean): SavedSettings {
-  const settings = parseTransformSettings(fields);
+  const settings = parseTransformSettings({ ...fields, format: fields.format === "avif" ? "jpeg" : fields.format });
   return {
     version: 1,
-    fields: { ...Object.fromEntries(Object.entries(settings).map(([key, value]) => [key, value === undefined ? "" : String(value)])), ...browserFields(fields) },
+    fields: { ...Object.fromEntries(Object.entries(settings).map(([key, value]) => [key, value === undefined ? "" : String(value)])), ...browserFields(fields), ...(fields.format === "avif" ? { format: "avif" } : {}), localOnly: ["on", "true"].includes(fields.localOnly ?? "") ? "true" : "false" },
     ratioLocked,
   };
 }
