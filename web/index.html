@@ -158,6 +158,7 @@
           </div>
 
           <div class="queue-entry">
+            <button id="collection-open" type="button" class="small-button">Contact sheet / PDF</button>
             <button id="queue-add" type="button" class="small-button">Add images to queue</button>
             <input id="queue-input" type="file" accept="image/*" multiple hidden />
             <span>Up to 50 exports · 150 MB total</span>
@@ -453,6 +454,18 @@
       </div>
     </footer>
 
+    <dialog id="collection-dialog" aria-labelledby="collection-title">
+      <h2 id="collection-title">Contact sheet &amp; images to PDF</h2>
+      <p>Uses the queue, or the current image when the queue is empty. Everything is generated on this device.</p>
+      <div class="tool-content"><label>Images to include <select id="collection-source"><option value="results">Completed exports (includes edits)</option><option value="sources">Source images (originals, without edits)</option></select></label></div>
+      <p id="collection-status" aria-live="polite"></p><ol id="collection-list"></ol>
+      <div class="collection-options">
+        <fieldset class="tool-content"><legend>Contact sheet</legend><label>Width (px) <input id="sheet-width" type="number" min="400" max="4800" value="1600" /></label><label>Columns <input id="sheet-columns" type="number" min="1" max="6" value="4" /></label><label><input id="sheet-labels" type="checkbox" checked /> Filename labels</label><button type="button" class="small-button" id="collection-sheet">Create contact sheet</button></fieldset>
+        <fieldset class="tool-content"><legend>Multi-page PDF</legend><label>Page size <select id="pdf-paper"><option value="a4">A4</option><option value="letter">US Letter</option><option value="image">Fit image (96 dpi)</option></select></label><label>Margin (points) <input id="pdf-margin" type="number" min="0" max="72" value="24" /></label><label><input id="pdf-landscape" type="checkbox" /> Landscape paper</label><p class="settings-note">One image per page. Images are fitted without cropping, up to 2400px for manageable PDFs.</p><button type="button" class="small-button" id="collection-pdf">Create PDF</button></fieldset>
+      </div>
+      <img id="collection-preview" alt="Generated contact sheet preview" hidden />
+      <div class="queue-actions"><button type="button" class="small-button" id="collection-download" disabled>Download file</button><button type="button" class="small-button" id="collection-cancel" hidden>Cancel export</button><button type="button" class="small-button" id="collection-close">Close</button></div>
+    </dialog>
     <dialog id="redact-dialog" aria-labelledby="redact-title">
       <h2 id="redact-title">Blur or redact</h2>
       <p>Drag a rectangle, or enter percentages below. Use solid black to remove sensitive content; blur is a visual effect.</p>
