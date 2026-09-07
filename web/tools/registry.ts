@@ -1,3 +1,4 @@
+import { differenceTool } from "./difference";
 import { spritesTool } from "./sprites";
 import { tilesTool } from "./tiles";
 import { socialTool } from "./social";
@@ -6,4 +7,4 @@ import { printTool } from "./print";
 import { histogramTool } from "./histogram";
 import { pickerTool } from "./picker";
 import { paletteTool } from "./palette";
-export const imageTools = { palette: paletteTool, picker: pickerTool, histogram: histogramTool, print: printTool, favicon: faviconTool, social: socialTool, tiles: tilesTool, sprites: spritesTool };
+export const imageTools = { palette: paletteTool, picker: pickerTool, histogram: histogramTool, print: printTool, favicon: faviconTool, social: socialTool, tiles: tilesTool, sprites: spritesTool, difference: differenceTool };

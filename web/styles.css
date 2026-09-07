@@ -1430,3 +1430,8 @@ footer p { margin: 0; color: var(--ink-soft); font-size: 0.7rem; text-align: cen
 .queue-naming { display: grid; gap: 8px; margin: 16px 0; }
 .queue-naming input { min-width: 0; width: 100%; min-height: 44px; padding: 10px; border: 1px solid var(--ink); border-radius: 8px; font: inherit; font-size: 16px; background: var(--paper); color: var(--ink); }
 .queue-filename { overflow-wrap: anywhere; }
+
+.difference-images { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+.difference-images figure { margin: 0; min-width: 0; }
+.difference-images canvas { width: 100%; height: auto; image-rendering: pixelated; }
+.difference-images figcaption { margin-top: 8px; font-size: 13px; font-weight: 700; }

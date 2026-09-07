@@ -204,3 +204,5 @@ Recipe JSON export/import backs up and transfers all saved recipes without accou
 Queue ordering supports natural filename sorting, source-size sorting, restoring addition order, and keyboard-accessible move-up/down actions. Order controls lock while processing; the chosen order carries into conversion and ZIP exports.
 
 Batch filename patterns support `{name}`, `{n}`, `{format}`, and `{variant}`, with a starting number and live per-item previews. Names and sequence numbers are captured at conversion start and retained on retry. Actual output extensions are always added, variant suffixes are preserved, and ZIP creation resolves duplicate names.
+
+Image difference heatmaps compare the source/export pair or an optional local comparison file. Require matching dimensions or explicitly stretch the comparison, set a changed-pixel threshold, and amplify the visualization. Downloads include the heatmap PNG and a JSON report with sampled dimensions, premultiplied-RGBA error metrics, and changed-pixel counts. Samples are bounded to 1,024 pixels on the longer edge; metrics are pixel comparisons, not perceptual quality ratings.
