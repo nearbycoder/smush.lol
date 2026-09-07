@@ -202,3 +202,5 @@ Duotone mapping blends shadows and highlights between two chosen colors with adj
 Recipe JSON export/import backs up and transfers all saved recipes without accounts. Imports validate the whole file before writing, regenerate IDs, number colliding names, and respect the 20-recipe/256-KB limits. Existing recipes remain intact; importing does not apply settings automatically.
 
 Queue ordering supports natural filename sorting, source-size sorting, restoring addition order, and keyboard-accessible move-up/down actions. Order controls lock while processing; the chosen order carries into conversion and ZIP exports.
+
+Batch filename patterns support `{name}`, `{n}`, `{format}`, and `{variant}`, with a starting number and live per-item previews. Names and sequence numbers are captured at conversion start and retained on retry. Actual output extensions are always added, variant suffixes are preserved, and ZIP creation resolves duplicate names.

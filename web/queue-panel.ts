@@ -1,3 +1,4 @@
+import { batchFilename, namingOptions } from "./filenames";
 import { copyImage } from "./clipboard";
 import { ConversionQueue, convertFile, formFields, type Processor, type QueueJob } from "./queue";
 import { createArchive, downloadBlob } from "./archive";
@@ -12,6 +13,10 @@ export function mountQueue(form: HTMLFormElement, notify: (message: string, erro
   const archive = document.querySelector<HTMLButtonElement>("#queue-zip")!;
   const sort = document.querySelector<HTMLButtonElement>("#queue-sort")!;
   const order = document.querySelector<HTMLSelectElement>("#queue-order")!;
+  const template = document.querySelector<HTMLInputElement>("#queue-name-template")!;
+  const sequence = document.querySelector<HTMLInputElement>("#queue-name-start")!;
+  const namingStatus = document.querySelector<HTMLElement>("#queue-name-status")!;
+  const readNaming = () => namingOptions(template.value, Number(sequence.value));
   let archiving = false;
   const queue = new ConversionQueue((file, fields, signal) => process(file, formFields(form).localOnly ? { ...fields, localOnly: "true" } : fields, signal), render);
   function render() {
@@ -22,7 +27,9 @@ export function mountQueue(form: HTMLFormElement, notify: (message: string, erro
     summary.textContent = `${done.length} of ${queue.jobs.length} ready to download${failed ? ` · ${failed} failed` : ""}${active ? " · Converting…" : ""}`;
     progress.max = Math.max(1, queue.jobs.length);
     progress.value = queue.jobs.filter(job => ["done", "error", "cancelled"].includes(job.status)).length;
-    start.disabled = !queue.jobs.some(job => job.status === "ready");
+    let namingError = ""; try { readNaming(); } catch (error) { namingError = (error as Error).message; }
+    namingStatus.textContent = namingError || "Names are captured when conversion starts. Retries keep their original names; ZIP downloads number any duplicates.";
+    start.disabled = Boolean(namingError) || !queue.jobs.some(job => job.status === "ready");
     cancel.disabled = !queue.jobs.some(job => ["ready", "queued", "processing"].includes(job.status));
     archive.disabled = !done.length || archiving;
     sort.disabled = order.disabled = !queue.canReorder || queue.jobs.length < 2;
@@ -37,6 +44,12 @@ export function mountQueue(form: HTMLFormElement, notify: (message: string, erro
     const labels = { ready: "Ready to convert", queued: "Waiting", processing: "Converting…", done: "Done", error: "Failed", cancelled: "Cancelled" };
     status.textContent = job.error ?? `${labels[job.status]}${job.result ? ` · ${Math.ceil(job.result.blob.size / 1024)} KB` : ""}`;
     info.append(name, status);
+    const preview = document.createElement("small"); preview.className = "queue-filename";
+    try {
+      const options = readNaming(), fields = job.fields ?? formFields(form);
+      preview.textContent = `Export: ${job.result?.filename ?? batchFilename(job.naming?.template ?? options.template, job.file.name, job.naming?.sequence ?? options.start+queue.jobs.indexOf(job), fields.format || "webp", job.suffix)}`;
+    } catch { preview.textContent = "Fix the filename pattern to see a preview."; }
+    info.append(preview);
     const actions = document.createElement("div");
     actions.className = "queue-item-actions";
     function action(label: string, run: () => void) {
@@ -69,9 +82,12 @@ export function mountQueue(form: HTMLFormElement, notify: (message: string, erro
     return item;
   }
   start.addEventListener("click", () => {
-    if (form.reportValidity()) void queue.start(formFields(form));
+    try { if (form.reportValidity()) void queue.start(formFields(form), readNaming()); } catch (error) { notify((error as Error).message, true); }
   });
   sort.addEventListener("click", () => { if (queue.sort(order.value)) notify("Queue order updated. Conversion and ZIP downloads use this order."); });
+  template.addEventListener("input", render); sequence.addEventListener("input", render);
+  form.addEventListener("change", render);
+  form.addEventListener("click", () => queueMicrotask(render));
   cancel.addEventListener("click", () => queue.cancelAll());
   document.querySelector("#queue-clear")!.addEventListener("click", () => queue.clear());
   archive.addEventListener("click", async () => {

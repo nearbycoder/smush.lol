@@ -1,3 +1,4 @@
+import { batchFilename, namingOptions, type NamingOptions } from "./filenames";
 import { usesBrowser, localResponse } from "./local-image";
 import { prepareImage } from "./prepare-image";
 export type ExportFields = Record<string, string>;
@@ -10,6 +11,7 @@ export interface QueueJob {
   fields?: ExportFields;
   status: "ready" | "queued" | "processing" | "done" | "error" | "cancelled";
   result?: ExportResult;
+  naming?: { template: string; sequence: number };
   error?: string;
   controller?: AbortController;
 }
@@ -56,8 +58,10 @@ export class ConversionQueue {
     this.changed(); return true;
   }
 
-  start(fields: ExportFields): Promise<void> {
-    for (const job of this.jobs) if (job.status === "ready") {
+  start(fields: ExportFields, naming: NamingOptions = { template: "", start: 1 }): Promise<void> {
+    const options = namingOptions(naming.template, naming.start);
+    for (const [index, job] of this.jobs.entries()) if (job.status === "ready") {
+      job.naming ??= { template: options.template, sequence: options.start + index };
       job.fields ??= { ...fields };
       job.status = "queued";
     }
@@ -117,10 +121,8 @@ export class ConversionQueue {
         if (controller.signal.aborted || !this.jobs.includes(job)) continue;
         const total = this.jobs.reduce((sum, item) => sum + (item.result?.blob.size ?? 0), 0);
         if (total + result.blob.size > MAX_QUEUE_BYTES) throw new Error("Results exceed 150 MB. Download and remove completed items, then retry.");
-        if (job.suffix) {
-          const dot = result.filename.lastIndexOf(".");
-          result.filename = dot > 0 ? `${result.filename.slice(0, dot)}-${job.suffix}${result.filename.slice(dot)}` : `${result.filename}-${job.suffix}`;
-        }
+        const format = result.filename.split(".").at(-1) || job.fields?.format || "webp";
+        result.filename = batchFilename(job.naming?.template || "", job.file.name, job.naming?.sequence ?? job.id, format, job.suffix, result.filename);
         job.result = result;
         job.status = "done";
       } catch (error) {
