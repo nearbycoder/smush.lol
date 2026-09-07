@@ -1,3 +1,4 @@
+import { mountCustomSelects } from "./custom-select";
 import { mountRecipeTransfer } from "./recipe-transfer";
 import { mountToolbox } from "./toolbox";
 import { mountHistory } from "./history";
@@ -1019,3 +1020,5 @@ document.querySelectorAll<HTMLButtonElement>("[data-duotone]").forEach(button =>
 }));
 
 mountRecipeTransfer(refreshSavedSettings, showToast);
+
+mountCustomSelects();
