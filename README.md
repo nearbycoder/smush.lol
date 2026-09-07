@@ -164,3 +164,7 @@ Open **Contact sheet / PDF** to combine queued images (or the current image if t
 **Inspect metadata** reads the original or current export locally and shows up to 300 readable tags, including camera settings, orientation, ICC profiles and GPS coordinates when present. Download the displayed values as JSON. Raw binary payloads and thumbnails are omitted, and unsupported/malformed metadata is reported explicitly. The parser is loaded on demand.
 
 **Undo / Redo** restores settings, crop regions, redactions and watermarks. Use the buttons or Ctrl/⌘ Z (Shift Z or Ctrl Y to redo) outside text fields and dialogs. History is bounded to 50 snapshots / 8 MB, stays in memory, and resets when replacing the source. Browser-only privacy mode is independent of undo and remains enabled through resets/recipes. Restoring settings cancels an in-flight conversion; convert again to update the output. Browser tooling dependencies are installed only in the build stage, keeping them out of the production server dependency tree.
+
+### Image toolbox
+
+The Image toolbox operates locally on the original source or current export. Color palette extraction samples up to 256px, excludes pixels below 50% opacity, groups similar RGB colors and exports up to 12 dominant colors as CSS variables. Percentages refer to all visible sampled pixels.

@@ -158,6 +158,7 @@
           </div>
 
           <div class="queue-entry">
+            <button id="toolbox-open" type="button" class="small-button">Image toolbox</button>
             <button id="metadata-open" type="button" class="small-button">Inspect metadata</button>
             <button id="collection-open" type="button" class="small-button">Contact sheet / PDF</button>
             <button id="queue-add" type="button" class="small-button">Add images to queue</button>
@@ -478,6 +479,13 @@
       </div>
     </footer>
 
+    <dialog id="toolbox-dialog" aria-labelledby="toolbox-title">
+      <h2 id="toolbox-title">Image toolbox</h2>
+      <div class="tool-content"><label>Tool <select id="toolbox-kind"></select></label><label>Use <select id="toolbox-source"><option value="source">Original source</option><option value="result">Current export (includes edits)</option></select></label></div>
+      <p id="toolbox-description"></p><div id="toolbox-controls" class="tool-content"></div>
+      <div class="queue-actions"><button type="button" id="toolbox-run" class="creative-action">Run tool</button><button type="button" id="toolbox-cancel" class="small-button">Clear / cancel</button><button type="button" id="toolbox-close" class="small-button">Close</button></div>
+      <p id="toolbox-status" role="status"></p><div id="toolbox-output"></div>
+    </dialog>
     <dialog id="metadata-dialog" aria-labelledby="metadata-title">
       <h2 id="metadata-title">Image metadata</h2>
       <div class="tool-content"><label>Inspect <select id="metadata-source"><option value="source">Original source</option><option value="result">Current export</option></select></label></div>
