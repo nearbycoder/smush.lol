@@ -1007,3 +1007,12 @@ document.querySelectorAll<HTMLButtonElement>("[data-pixel-scale]").forEach(butto
   controls.querySelector<HTMLInputElement>('[name="format"][value="png"]')!.checked = true;
   refreshControls(); showToast(`${scale}× pixel-art settings applied. Convert to update the result.`);
 }));
+
+document.querySelectorAll<HTMLButtonElement>("[data-duotone]").forEach(button => button.addEventListener("click", () => {
+  const [dark, light] = button.dataset.duotone!.split(",");
+  controls.querySelector<HTMLInputElement>('[name="duotone"]')!.checked = true;
+  controls.querySelector<HTMLInputElement>('[name="duotoneDark"]')!.value = dark!;
+  controls.querySelector<HTMLInputElement>('[name="duotoneLight"]')!.value = light!;
+  controls.querySelector<HTMLInputElement>('[name="duotoneAmount"]')!.value = "100";
+  refreshControls(); showToast("Duotone palette applied. Convert to update the result.");
+}));

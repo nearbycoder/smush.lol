@@ -463,6 +463,12 @@
                 <p class="settings-note">Enhance edges after resizing and color adjustments. Start around 25–50%; zero disables it. Transparent neighbors do not create dark halos. Output must be under 12 megapixels.</p>
                 <label class="creative-field">Color filter <select name="colorFilter"><option value="none">Original colors</option><option value="grayscale">Grayscale</option><option value="sepia">Sepia</option><option value="invert">Invert</option></select></label>
                 <label class="creative-field">Filter strength (%) <input name="filterAmount" type="number" min="0" max="100" value="100" /></label>
+                <label><input name="duotone" type="checkbox" value="true" /> Duotone color mapping</label>
+                <label class="creative-field creative-color">Shadow color <input name="duotoneDark" type="color" value="#192b40" /></label>
+                <label class="creative-field creative-color">Highlight color <input name="duotoneLight" type="color" value="#ffdb8c" /></label>
+                <label class="creative-field">Duotone strength (%) <input name="duotoneAmount" type="number" min="0" max="100" value="100" /></label>
+                <div class="creative-actions" role="group" aria-label="Duotone palettes"><button class="creative-action" type="button" data-duotone="#192b40,#ffdb8c">Navy &amp; gold</button><button class="creative-action" type="button" data-duotone="#39245c,#f2d9ff">Plum &amp; lilac</button><button class="creative-action" type="button" data-duotone="#064b45,#dbffd2">Forest &amp; mint</button></div>
+                <p class="settings-note">Maps darker and lighter pixels between your two colors, after exposure and filters. Transparency is preserved. Mix with the original using strength; presets enable duotone at full strength.</p>
                 <p class="settings-note">Applies before redaction, watermarks and borders. Set strength to zero to keep the original colors. Adjustments run locally in a cancellable worker.</p>
               </section>
               <section class="creative-section extra-controls" aria-labelledby="border-title">

@@ -27,3 +27,12 @@ test("sharpening enhances edges while preserving flat areas and transparency",()
  expect([...adjustPixels(edge,2,1,{sharpen:"200"})]).toEqual([100,100,100,255,0,0,0,0]);
  expect(savedSettings({sharpen:"40"},true).fields.sharpen).toBe("40");
 });
+
+test("duotone maps luminance endpoints and mixes strength without changing alpha",()=>{
+ const fields={duotone:"true",duotoneDark:"#0000ff",duotoneLight:"#ffff00"};
+ expect(pixel([0,0,0,128],fields)).toEqual([0,0,255,128]);
+ expect(pixel([255,255,255,255],fields)).toEqual([255,255,0,255]);
+ expect(pixel([100,100,100,255],fields)).toEqual([100,100,155,255]);
+ expect(pixel([100,100,100,255],{...fields,duotoneAmount:"0"})).toEqual([100,100,100,255]);
+ expect(savedSettings(fields,true).fields.duotoneDark).toBe("#0000ff");
+});

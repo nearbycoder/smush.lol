@@ -1,6 +1,9 @@
 import { finishingSettings } from "./finishing-settings";
 export function adjustPixels(data: Uint8ClampedArray, width: number, height: number, fields: Record<string, string>) {
   const settings = finishingSettings(fields), amount = Number(settings.filterAmount) / 100;
+  const duotone = settings.duotone === "true" ? Number(settings.duotoneAmount) / 100 : 0;
+  const rgb = (hex: string) => [1,3,5].map(start => parseInt(hex.slice(start, start+2),16));
+  const dark = rgb(settings.duotoneDark!), light = rgb(settings.duotoneLight!);
   const contrast = Number(settings.contrast) / 100, exposure = 2 ** Number(settings.exposure);
   // A lookup table avoids repeated exposure/contrast arithmetic on large images.
   const tones = Uint8ClampedArray.from({ length: 256 }, (_, n) => (n * exposure - 128) * contrast + 128);
@@ -13,6 +16,10 @@ export function adjustPixels(data: Uint8ClampedArray, width: number, height: num
     if (settings.colorFilter === "sepia") color = [Math.min(255, .393*r+.769*g+.189*b), Math.min(255,.349*r+.686*g+.168*b), Math.min(255,.272*r+.534*g+.131*b)];
     if (settings.colorFilter === "invert") color = [255-r, 255-g, 255-b];
     for (let c = 0; c < 3; c++) data[i+c] = data[i+c]! * (1-amount) + color[c]! * amount;
+    if (duotone) {
+      const luminance = (.2126*data[i]! + .7152*data[i+1]! + .0722*data[i+2]!) / 255;
+      for (let c = 0; c < 3; c++) data[i+c] = data[i+c]! * (1-duotone) + (dark[c]! + (light[c]!-dark[c]!)*luminance) * duotone;
+    }
   }
   return sharpenPixels(data, width, height, Number(settings.sharpen) / 100);
 }

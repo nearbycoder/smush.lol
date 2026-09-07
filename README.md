@@ -196,3 +196,5 @@ Sharpening adds adjustable edge enhancement after resizing and color adjustment.
 Pixel-art resizing uses nearest-neighbor sampling. 2×, 4×, and 8× shortcuts account for crop and rotation, allow enlargement, and choose PNG; custom dimensions are also supported. Presets reject oversized output instead of silently changing the scale.
 
 Transparent-edge trimming scans the cropped source before resizing. Set an alpha threshold (0–254) and retained margin (0–512 source pixels); margins stay inside the source. The cancellable scan supports up to 12 megapixels and reports entirely transparent inputs rather than creating an empty export.
+
+Duotone mapping blends shadows and highlights between two chosen colors with adjustable strength. Navy/gold, plum/lilac, and forest/mint presets are included. Mapping follows exposure and color filters, preserves transparency, and precedes sharpening and watermarks.
