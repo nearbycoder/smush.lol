@@ -992,3 +992,17 @@ editHistory = mountHistory(controls, () => {
 
 mountToolbox(result => result ? (resultBlob ? new File([resultBlob], resultFilename, { type: resultBlob.type }) : null) : selectedFile ?? remoteSourceFile,
   result => { const files = queue.jobs.flatMap(job => result ? (job.result ? [new File([job.result.blob], job.result.filename, { type: job.result.blob.type })] : []) : [job.file]); const current = result ? (resultBlob ? new File([resultBlob], resultFilename, { type: resultBlob.type }) : null) : selectedFile ?? remoteSourceFile; return files.length ? files : current ? [current] : []; });
+
+document.querySelectorAll<HTMLButtonElement>("[data-pixel-scale]").forEach(button => button.addEventListener("click", () => {
+  if (!sourceInfo.width || !sourceInfo.height) { showToast("Choose an image before scaling pixels.", true); return; }
+  const fields = formFields(controls), rect = cropRect(sourceInfo.width, sourceInfo.height, fields), scale = Number(button.dataset.pixelScale);
+  const rotated = ["90", "270"].includes(fields.rotate || "0");
+  const width = (rotated ? rect.height : rect.width) * scale, height = (rotated ? rect.width : rect.height) * scale;
+  if (width > 12000 || height > 12000 || width * height > 48000000) { showToast("Choose a smaller scale: output is limited to 12,000px per side and 48 megapixels.", true); return; }
+  widthInput.value = String(width); heightInput.value = String(height);
+  controls.querySelector<HTMLInputElement>('[name="pixelArt"]')!.checked = true;
+  controls.querySelector<HTMLInputElement>('[name="withoutEnlargement"]')!.checked = false;
+  controls.querySelector<HTMLSelectElement>('[name="fit"]')!.value = "inside";
+  controls.querySelector<HTMLInputElement>('[name="format"][value="png"]')!.checked = true;
+  refreshControls(); showToast(`${scale}× pixel-art settings applied. Convert to update the result.`);
+}));

@@ -64,7 +64,7 @@ export async function renderImage(file: File, fields: Record<string, string>, si
     if (fields.format === "jpeg") { ctx.fillStyle = /^#[\da-f]{6}$/i.test(fields.background ?? "") ? fields.background! : "#ffffff"; ctx.fillRect(0, 0, width, height); }
     ctx.save(); ctx.translate(width / 2, height / 2); ctx.scale(settings.flop ? -1 : 1, settings.flip ? -1 : 1); ctx.rotate(settings.rotate * Math.PI / 180);
     ctx.filter = `brightness(${settings.brightness}) saturate(${settings.saturation})`;
-    ctx.imageSmoothingQuality = "high";
+    ctx.imageSmoothingQuality = "high"; ctx.imageSmoothingEnabled = !["true", "on"].includes(fields.pixelArt ?? "");
     const dw = rotated ? height : width, dh = rotated ? width : height;
     ctx.drawImage(image, rect.x, rect.y, rect.width, rect.height, -dw / 2, -dh / 2, dw, dh); ctx.restore();
     try { await paintPixelEffects(canvas, fields, signal); await paintEffects(canvas, fields, signal); signal.throwIfAborted(); canvas = finishCanvas(canvas, fields); return canvas; } catch (error) { canvas.width = canvas.height = 0; throw error; }
