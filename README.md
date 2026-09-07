@@ -210,3 +210,5 @@ Image difference heatmaps compare the source/export pair or an optional local co
 Redaction previews exclude outer borders and corner masks so selected regions align with the exported image. When background removal and trimming are combined, the preview uses the same cutout geometry.
 
 All dropdowns use a shared custom combobox with styled menus, including dynamically generated toolbox controls. Keyboard support includes arrows, Home/End, typeahead, Enter/Space, Escape, and Tab. Native selects remain hidden as form-state backing stores so recipes, undo/redo, reset, and submission keep their existing behavior. Menus stay within the viewport and render above dialog clipping. Browser regression checks are in `tests/browser/custom-dropdowns.js` (run with `agent-browser eval` against the built app).
+
+The settings introduction groups undo/redo with the header, uses larger preset and crop controls, and keeps recipe management in a collapsed section. Recipe actions adapt to empty and saved states, distinguish saving from updating, and separate file transfer from everyday use. Browser layout and recipe-flow checks are in `tests/browser/settings-panel.js`.

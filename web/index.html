@@ -196,33 +196,49 @@
             <div>
               <h2>Settings</h2>
             </div>
-            <button id="reset-button" class="reset-button" type="button">Reset</button>
+            <button id="reset-button" class="reset-button settings-action" type="button">Reset</button>
           </div>
 
-          <div class="history-controls"><button id="undo-settings" type="button" class="small-button" disabled>↶ Undo</button><button id="redo-settings" type="button" class="small-button" disabled>↷ Redo</button><small>Settings &amp; crop · Ctrl/⌘ Z</small></div>
+          <div class="history-controls" role="group" aria-label="Editing history">
+            <button id="undo-settings" type="button" class="settings-action" disabled><span aria-hidden="true">↶</span> Undo</button>
+            <button id="redo-settings" type="button" class="settings-action" disabled><span aria-hidden="true">↷</span> Redo</button>
+            <small class="history-shortcut">Ctrl / ⌘ Z</small>
+          </div>
           <p id="history-status" class="settings-note" aria-live="polite"></p>
           <section class="quick-export" aria-labelledby="quick-export-heading">
-            <h3 id="quick-export-heading">Quick export</h3>
+            <div class="settings-section-heading"><h3 id="quick-export-heading">Quick export</h3><span>Start here</span></div>
             <div class="export-presets">
-              <button type="button" data-export-preset="web">Web <small>Smaller files</small></button>
-              <button type="button" data-export-preset="email">Email <small>Easy to share</small></button>
-              <button type="button" data-export-preset="lossless">Lossless <small>Keep every pixel</small></button>
+              <button type="button" data-export-preset="web"><span class="preset-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/></svg></span><strong>Web</strong><small>Smaller files</small></button>
+              <button type="button" data-export-preset="email"><span class="preset-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7 8 6 8-6"/></svg></span><strong>Email</strong><small>Easy to share</small></button>
+              <button type="button" data-export-preset="lossless"><span class="preset-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6z"/><path d="m8 12 3 3 5-6"/></svg></span><strong>Lossless</strong><small>Every pixel</small></button>
             </div>
-            <p id="preset-hint" class="preset-hint" aria-live="polite">Start with a preset, then fine-tune below.</p>
-            <div class="recipe-fields">
-              <label for="recipe-name">Recipe name</label><input id="recipe-name" type="text" maxlength="48" value="My recipe" />
-              <label for="recipe-select">Saved recipes</label><select id="recipe-select" disabled><option>No saved recipes</option></select>
-            </div>
-            <div class="saved-settings" aria-label="Saved recipes">
-              <button id="save-settings" type="button" class="text-link">Save recipe</button>
-              <button id="use-settings" type="button" class="text-link" disabled>Use recipe</button>
-              <button id="forget-settings" type="button" class="text-link" disabled>Delete recipe</button>
-            </div>
-            <div class="saved-settings"><button id="recipe-export" type="button" class="text-link">Export recipes</button><button id="recipe-import" type="button" class="text-link">Import recipes</button></div>
-            <input id="recipe-import-file" type="file" accept="application/json,.json" aria-label="Import recipe JSON" hidden />
-            <p class="settings-note">Back up or transfer settings as JSON (up to 256 KB). Import keeps existing recipes and numbers duplicate names. Choose “Use recipe” to apply one.</p>
-            <p class="settings-note">Up to 20 recipes in this browser. Saving an existing name updates it. No images or URLs are saved.</p>
+            <p id="preset-hint" class="preset-hint" aria-live="polite">Choose a preset, then fine-tune below.</p>
           </section>
+
+          <details id="recipe-panel" class="recipe-panel">
+            <summary><span class="recipe-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 4h12v17l-6-4-6 4z"/></svg></span><span class="recipe-summary-copy"><strong>Saved recipes</strong><small id="recipe-summary">Save settings for next time</small></span><span class="recipe-chevron" aria-hidden="true">＋</span></summary>
+            <div class="recipe-content">
+              <p id="recipe-empty" class="recipe-note">Save your current settings to reuse them later.</p>
+              <div id="recipe-library" hidden>
+                <label for="recipe-select">Choose a recipe</label><select id="recipe-select" disabled><option>No saved recipes</option></select>
+                <div class="recipe-actions">
+                  <button id="use-settings" type="button" class="settings-action settings-action-primary" disabled>Use recipe</button>
+                  <button id="forget-settings" type="button" class="settings-action recipe-delete" disabled>Delete</button>
+                </div>
+              </div>
+              <div class="recipe-fields">
+                <label for="recipe-name">Recipe name</label>
+                <div class="recipe-save-row"><input id="recipe-name" type="text" maxlength="48" value="My recipe" placeholder="e.g. Website images" /><button id="save-settings" type="button" class="settings-action settings-action-primary">Save recipe</button></div>
+              </div>
+              <p class="recipe-note">Up to 20 recipes, stored in this browser. Saving the same name updates it.</p>
+              <div class="recipe-transfer">
+                <div class="recipe-transfer-heading"><strong>Bring your recipes along</strong><small>Transfer settings between devices.</small></div>
+                <div class="recipe-actions"><button id="recipe-import" type="button" class="settings-action">Import file</button><button id="recipe-export" type="button" class="settings-action" disabled>Export all</button></div>
+                <input id="recipe-import-file" type="file" accept="application/json,.json" aria-label="Import recipe JSON" hidden />
+                <p class="recipe-note">JSON files only. Your images are never included.</p>
+              </div>
+            </div>
+          </details>
 
           <section class="local-processing-settings" aria-labelledby="local-processing-title">
             <label class="check-row">
@@ -233,7 +249,7 @@
             <p id="local-encoding-note" class="settings-note" hidden>Local encoding uses browser resampling, standard JPEG and PNG compression. Server encoding options are disabled. SVG and AVIF always process locally.</p>
           </section>
           <section class="crop-settings">
-            <div class="queue-actions"><button id="crop-open" type="button" class="small-button">Crop image</button><button id="crop-remove" type="button" class="small-button" disabled>Remove crop</button></div>
+            <div class="queue-actions"><button id="crop-open" type="button" class="settings-action">Crop image</button><button id="crop-remove" type="button" class="settings-action" disabled>Remove crop</button></div>
             <p id="crop-summary" class="settings-note">No crop. Cropping happens before resize and rotation.</p>
             <input type="hidden" name="cropRatio" value="" />
             <input type="hidden" name="cropScale" value="100" />

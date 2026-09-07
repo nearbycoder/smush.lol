@@ -702,7 +702,7 @@ function resetControls(): void {
   flopInput.value = "false";
   flipInput.value = "false";
   advancedOptions.open = false;
-  presetHint.textContent = "Start with a preset, then fine-tune below.";
+  presetHint.textContent = "Choose a preset, then fine-tune below.";
   refreshControls();
 }
 
@@ -736,18 +736,38 @@ document.querySelectorAll<HTMLButtonElement>("[data-export-preset]").forEach(but
 
 const recipeSelect = byId<HTMLSelectElement>("recipe-select");
 const recipeName = byId<HTMLInputElement>("recipe-name");
+let recipeNames: string[] = [];
+function refreshRecipeSaveAction(): void {
+  const updating = recipeNames.includes(recipeName.value.trim().toLowerCase());
+  saveSettingsButton.textContent = updating ? "Update recipe" : "Save recipe";
+  saveSettingsButton.classList.toggle("settings-action-primary", !updating);
+}
+recipeName.addEventListener("input", refreshRecipeSaveAction);
+controls.addEventListener("reset", () => queueMicrotask(refreshRecipeSaveAction));
 function refreshSavedSettings(selectedId = recipeSelect.value): void {
   try {
     const recipes = loadRecipes(localStorage);
+    recipeNames = recipes.map(recipe => recipe.name.toLowerCase());
+    refreshRecipeSaveAction();
     recipeSelect.replaceChildren(...recipes.map(recipe => new Option(recipe.name, recipe.id)));
     if (!recipes.length) recipeSelect.append(new Option("No saved recipes", ""));
     if (recipes.some(recipe => recipe.id === selectedId)) recipeSelect.value = selectedId;
     recipeSelect.disabled = useSettingsButton.disabled = forgetSettingsButton.disabled = recipes.length === 0;
+    byId("recipe-library").hidden = recipes.length === 0;
+    byId("recipe-empty").hidden = recipes.length > 0;
+    byId("recipe-empty").textContent = "Save your current settings to reuse them later.";
+    byId("recipe-summary").textContent = recipes.length ? `${recipes.length} ${recipes.length === 1 ? "recipe" : "recipes"} ready to reuse` : "Save settings for next time";
+    byId<HTMLButtonElement>("recipe-export").disabled = recipes.length === 0;
   } catch {
     recipeSelect.disabled = useSettingsButton.disabled = forgetSettingsButton.disabled = true;
+    byId("recipe-library").hidden = true;
+    byId("recipe-empty").hidden = false;
+    byId("recipe-empty").textContent = "Browser storage is unavailable. Enable it to save recipes on this device.";
+    byId("recipe-summary").textContent = "Browser storage unavailable";
+    byId<HTMLButtonElement>("recipe-export").disabled = true;
   }
 }
-recipeSelect.addEventListener("change", () => { recipeName.value = recipeSelect.selectedOptions[0]?.textContent ?? "My recipe"; });
+recipeSelect.addEventListener("change", () => { recipeName.value = recipeSelect.selectedOptions[0]?.textContent ?? "My recipe"; refreshRecipeSaveAction(); });
 
 saveSettingsButton.addEventListener("click", () => {
   if (!controls.reportValidity()) return;
@@ -774,6 +794,7 @@ useSettingsButton.addEventListener("click", () => {
     ratioLocked = recipe.settings.ratioLocked;
     applyFields(recipe.settings.fields);
     recipeName.value = recipe.name;
+    refreshRecipeSaveAction();
     recipeSelect.value = recipe.id;
     presetHint.textContent = `Recipe applied: ${recipe.name}`;
     showToast("Recipe applied. Convert when ready.");
