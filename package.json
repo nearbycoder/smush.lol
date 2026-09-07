@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@elysiajs/static": "^1.4.10",
+    "@huggingface/transformers": "4.2.0",
     "@jsquash/avif": "^2.1.1",
     "@jsquash/webp": "^1.5.0",
     "elysia": "^1.4.29",

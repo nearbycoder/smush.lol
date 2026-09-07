@@ -1,3 +1,4 @@
+import { effectSettings } from "./effect-settings";
 import { browserFields } from "./crop-geometry";
 import { parseTransformSettings } from "../src/transform";
 
@@ -19,7 +20,7 @@ export function savedSettings(fields: Record<string, string>, ratioLocked: boole
   const settings = parseTransformSettings({ ...fields, format: fields.format === "avif" ? "jpeg" : fields.format });
   return {
     version: 1,
-    fields: { ...Object.fromEntries(Object.entries(settings).map(([key, value]) => [key, value === undefined ? "" : String(value)])), ...browserFields(fields), ...(fields.format === "avif" ? { format: "avif" } : {}), localOnly: ["on", "true"].includes(fields.localOnly ?? "") ? "true" : "false" },
+    fields: { ...Object.fromEntries(Object.entries(settings).map(([key, value]) => [key, value === undefined ? "" : String(value)])), ...browserFields(fields), ...effectSettings(fields), ...(fields.format === "avif" ? { format: "avif" } : {}), localOnly: ["on", "true"].includes(fields.localOnly ?? "") ? "true" : "false" },
     ratioLocked,
   };
 }
