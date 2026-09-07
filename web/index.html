@@ -167,6 +167,7 @@
           </div>
           <section id="queue-panel" class="queue-panel" aria-labelledby="queue-heading" hidden>
             <h2 id="queue-heading">Conversion queue</h2>
+            <div class="queue-naming"><label for="queue-name-template">Batch filename pattern (optional)</label><input id="queue-name-template" type="text" maxlength="100" placeholder="{name}-{n}" aria-describedby="queue-name-help queue-name-status" /><label for="queue-name-start">Starting number</label><input id="queue-name-start" type="number" min="1" max="999949" value="1" /><p id="queue-name-help" class="settings-note">Tokens: {name} = source name, {n} = position starting at your number, {format} = extension, {variant} = size label. The extension is added automatically. Leave blank for standard names.</p><p id="queue-name-status" class="settings-note" aria-live="polite"></p></div>
             <div class="queue-order-controls"><label for="queue-order">Queue order</label><select id="queue-order"><option value="added">Order added</option><option value="name-asc">Name A–Z</option><option value="name-desc">Name Z–A</option><option value="size-asc">Smallest source first</option><option value="size-desc">Largest source first</option></select><button id="queue-sort" class="small-button" type="button">Sort queue</button></div>
             <p class="settings-note">Sort or move individual items before converting or downloading. Ordering is locked while conversions are running.</p>
             <p id="queue-summary" role="status" aria-live="polite"></p>

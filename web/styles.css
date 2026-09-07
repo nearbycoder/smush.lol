@@ -1426,3 +1426,7 @@ footer p { margin: 0; color: var(--ink-soft); font-size: 0.7rem; text-align: cen
 .queue-order-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 16px 0 8px; }
 .queue-order-controls select { min-width: 0; max-width: 100%; min-height: 44px; border: 1px solid var(--ink); border-radius: 8px; padding: 8px; font: inherit; background: var(--paper); color: var(--ink); }
 .queue-order-controls button { min-height: 44px; }
+
+.queue-naming { display: grid; gap: 8px; margin: 16px 0; }
+.queue-naming input { min-width: 0; width: 100%; min-height: 44px; padding: 10px; border: 1px solid var(--ink); border-radius: 8px; font: inherit; font-size: 16px; background: var(--paper); color: var(--ink); }
+.queue-filename { overflow-wrap: anywhere; }
