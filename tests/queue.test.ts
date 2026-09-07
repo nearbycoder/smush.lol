@@ -80,3 +80,16 @@ test("ZIP preserves every duplicate filename and prevents path traversal", async
   expect(Object.keys(files)).toEqual(["same.webp", "SAME-2.webp", "__private.webp"]);
   expect(Object.values(files).map(bytes => strFromU8(bytes))).toEqual(["one", "two", "three"]);
 });
+
+test("queue ordering is stable, restorable, and locked while processing", async () => {
+ let release!: () => void; const seen: string[] = [];
+ const queue = new ConversionQueue(async f => {seen.push(f.name);await new Promise<void>(r=>{release=r;});return result();});
+ queue.add([file("photo10.png"),file("photo2.png"),file("photo1.png")]);
+ expect(queue.sort("name-asc")).toBe(true);expect(queue.jobs.map(j=>j.file.name)).toEqual(["photo1.png","photo2.png","photo10.png"]);
+ expect(queue.move(queue.jobs[0]!.id,-1)).toBe(false);
+ expect(queue.move(queue.jobs[0]!.id,1)).toBe(true);
+ expect(queue.jobs[0]!.file.name).toBe("photo2.png");
+ queue.sort("added");expect(queue.jobs[0]!.file.name).toBe("photo10.png");
+ const running=queue.start({});expect(queue.sort("name-desc")).toBe(false);expect(queue.move(queue.jobs[0]!.id,1)).toBe(false);
+ queue.cancelAll();release();await running;expect(queue.canReorder).toBe(true);expect(seen).toEqual(["photo10.png"]);
+});

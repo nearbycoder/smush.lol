@@ -10,6 +10,8 @@ export function mountQueue(form: HTMLFormElement, notify: (message: string, erro
   const start = document.querySelector<HTMLButtonElement>("#queue-start")!;
   const cancel = document.querySelector<HTMLButtonElement>("#queue-cancel")!;
   const archive = document.querySelector<HTMLButtonElement>("#queue-zip")!;
+  const sort = document.querySelector<HTMLButtonElement>("#queue-sort")!;
+  const order = document.querySelector<HTMLSelectElement>("#queue-order")!;
   let archiving = false;
   const queue = new ConversionQueue((file, fields, signal) => process(file, formFields(form).localOnly ? { ...fields, localOnly: "true" } : fields, signal), render);
   function render() {
@@ -23,10 +25,11 @@ export function mountQueue(form: HTMLFormElement, notify: (message: string, erro
     start.disabled = !queue.jobs.some(job => job.status === "ready");
     cancel.disabled = !queue.jobs.some(job => ["ready", "queued", "processing"].includes(job.status));
     archive.disabled = !done.length || archiving;
+    sort.disabled = order.disabled = !queue.canReorder || queue.jobs.length < 2;
     list.replaceChildren(...queue.jobs.map(row));
   }
   function row(job: QueueJob) {
-    const item = document.createElement("li");
+    const item = document.createElement("li"); item.dataset.jobId = String(job.id); item.tabIndex = -1;
     const info = document.createElement("div");
     const name = document.createElement("strong");
     name.textContent = job.name;
@@ -43,7 +46,17 @@ export function mountQueue(form: HTMLFormElement, notify: (message: string, erro
       button.textContent = label;
       button.setAttribute("aria-label", `${label} ${job.name}`);
       button.addEventListener("click", run);
-      actions.append(button);
+      actions.append(button); return button;
+    }
+    for (const direction of [-1, 1] as const) {
+      const button = action(direction === -1 ? "Move up" : "Move down", () => {
+        if (queue.move(job.id, direction)) {
+          list.querySelector<HTMLElement>(`[data-job-id="${job.id}"]`)?.focus();
+          notify(`Moved ${job.name} to position ${queue.jobs.indexOf(job)+1}.`);
+        }
+      });
+      const index = queue.jobs.indexOf(job);
+      button.disabled = !queue.canReorder || index + direction < 0 || index + direction >= queue.jobs.length;
     }
     if (job.result) {
       action("Download", () => downloadBlob(job.result!.blob, job.result!.filename));
@@ -58,6 +71,7 @@ export function mountQueue(form: HTMLFormElement, notify: (message: string, erro
   start.addEventListener("click", () => {
     if (form.reportValidity()) void queue.start(formFields(form));
   });
+  sort.addEventListener("click", () => { if (queue.sort(order.value)) notify("Queue order updated. Conversion and ZIP downloads use this order."); });
   cancel.addEventListener("click", () => queue.cancelAll());
   document.querySelector("#queue-clear")!.addEventListener("click", () => queue.clear());
   archive.addEventListener("click", async () => {
