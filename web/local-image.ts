@@ -1,3 +1,5 @@
+import { hasFinishing } from "./finishing-settings";
+import { finishCanvas } from "./finishing";
 import { hasEffects } from "./effect-settings";
 import { paintEffects } from "./effects";
 import { removeBackground } from "./background";
@@ -6,7 +8,7 @@ import { parseTransformSettings, MAX_PIXELS, MAX_DIMENSION } from "../src/transf
 import { fitTargetSize } from "../src/target-size";
 
 export const isSvg = (file: File) => file.type === "image/svg+xml" || /\.svg$/i.test(file.name);
-export const usesBrowser = (file: File | null, fields: Record<string, string>) => ["true", "on"].includes(fields.localOnly ?? "") || hasEffects(fields) || fields.format === "avif" || Boolean(file && isSvg(file));
+export const usesBrowser = (file: File | null, fields: Record<string, string>) => ["true", "on"].includes(fields.localOnly ?? "") || hasFinishing(fields) || hasEffects(fields) || fields.format === "avif" || Boolean(file && isSvg(file));
 export async function safeSource(file: File): Promise<Blob> {
   if (!isSvg(file)) return file;
   const xml = new DOMParser().parseFromString(await file.text(), "image/svg+xml");
@@ -55,7 +57,7 @@ export async function renderImage(file: File, fields: Record<string, string>, si
     }
     const rect = cropRect(image.naturalWidth, image.naturalHeight, fields);
     const { width, height, rotated, settings } = outputSize(rect.width, rect.height, fields);
-    const canvas = document.createElement("canvas"); canvas.width = width; canvas.height = height;
+    let canvas = document.createElement("canvas"); canvas.width = width; canvas.height = height;
     const ctx = canvas.getContext("2d")!;
     if (fields.format === "jpeg") { ctx.fillStyle = /^#[\da-f]{6}$/i.test(fields.background ?? "") ? fields.background! : "#ffffff"; ctx.fillRect(0, 0, width, height); }
     ctx.save(); ctx.translate(width / 2, height / 2); ctx.scale(settings.flop ? -1 : 1, settings.flip ? -1 : 1); ctx.rotate(settings.rotate * Math.PI / 180);
@@ -63,7 +65,7 @@ export async function renderImage(file: File, fields: Record<string, string>, si
     ctx.imageSmoothingQuality = "high";
     const dw = rotated ? height : width, dh = rotated ? width : height;
     ctx.drawImage(image, rect.x, rect.y, rect.width, rect.height, -dw / 2, -dh / 2, dw, dh); ctx.restore();
-    try { await paintEffects(canvas, fields, signal); signal.throwIfAborted(); return canvas; } catch (error) { canvas.width = canvas.height = 0; throw error; }
+    try { await paintEffects(canvas, fields, signal); signal.throwIfAborted(); canvas = finishCanvas(canvas, fields); return canvas; } catch (error) { canvas.width = canvas.height = 0; throw error; }
   } finally { release(); }
 }
 export const canvasBlob = (canvas: HTMLCanvasElement, type = "image/png", quality?: number) => new Promise<Blob>((resolve, reject) => canvas.toBlob(blob => blob && blob.type === type ? resolve(blob) : reject(new Error(`This browser cannot encode ${type}.`)), type, quality));
@@ -71,6 +73,7 @@ export async function localResponse(file: File, fields: Record<string, string>, 
   const canvas = await renderImage(file, fields, signal);
   try {
     const format = fields.format || "webp";
+    if (format === "jpeg") { const ctx = canvas.getContext("2d")!; ctx.save(); ctx.globalCompositeOperation = "destination-over"; ctx.fillStyle = /^#[\da-f]{6}$/i.test(fields.background ?? "") ? fields.background! : "#ffffff"; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.restore(); }
     const settings = parseTransformSettings({ ...fields, format: format === "avif" ? "jpeg" : format });
     const encode = async (q: number) => ({ output: await canvasBlob(canvas, `image/${format}`, q / 100), quality: q });
     let result: { output: Blob; quality: number };

@@ -1417,3 +1417,8 @@ footer p { margin: 0; color: var(--ink-soft); font-size: 0.7rem; text-align: cen
 #toolbox-output { display: grid; gap: 12px; }
 #toolbox-output canvas { max-width: 100%; height: auto; border: 1px solid var(--paper-deep); }
 .palette-swatch { display: inline-block; width: 48px; height: 32px; margin-right: 12px; vertical-align: middle; border: 1px solid var(--line); border-radius: 5px; }
+
+.extra-controls { display: grid; gap: 14px; }
+.extra-controls h3 { margin: 0; font-size: .82rem; }
+.extra-controls > label:not(.creative-field) { display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: .75rem; }
+.extra-controls input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--ink); }
