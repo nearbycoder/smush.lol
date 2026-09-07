@@ -14,5 +14,23 @@ export function adjustPixels(data: Uint8ClampedArray, width: number, height: num
     if (settings.colorFilter === "invert") color = [255-r, 255-g, 255-b];
     for (let c = 0; c < 3; c++) data[i+c] = data[i+c]! * (1-amount) + color[c]! * amount;
   }
+  return sharpenPixels(data, width, height, Number(settings.sharpen) / 100);
+}
+
+export function sharpenPixels(data: Uint8ClampedArray, width: number, height: number, amount: number) {
+  if (!amount) return data;
+  if (width * height > 12000000) throw new Error("Resize below 12 megapixels before sharpening.");
+  const source = new Uint8ClampedArray(data);
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+    const i = (y * width + x) * 4;
+    if (!source[i + 3]) continue;
+    const neighbors = [x ? i-4 : i, x+1 < width ? i+4 : i, y ? i-width*4 : i, y+1 < height ? i+width*4 : i];
+    for (let c = 0; c < 3; c++) {
+      const center = source[i+c]!;
+      let edge = 0;
+      for (const n of neighbors) edge += (center - source[n+c]!) * source[n+3]! / 255;
+      data[i+c] = center + edge * amount;
+    }
+  }
   return data;
 }

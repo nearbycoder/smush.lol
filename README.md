@@ -190,3 +190,5 @@ Rounded corners use a percentage of the shorter finished edge (0–50%). They ap
 Grayscale, sepia, and invert filters offer 0–100% strength. Pixel adjustments run in a cancellable worker before redaction, watermarks, and borders, preserve alpha, and carry through recipes and batch exports.
 
 Exposure adjusts RGB intensity from −3 to +3 stops, followed by 0–200% contrast around mid-gray. Neutral defaults preserve tones. Worker URLs are versioned at build time so cached processing code cannot outlive the interface version.
+
+Sharpening adds adjustable edge enhancement after resizing and color adjustment. Alpha-weighted neighbors avoid dark transparent-edge halos. Zero disables the filter; sharpening is limited to 12-megapixel output to bound working memory.

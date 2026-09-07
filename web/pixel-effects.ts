@@ -2,6 +2,7 @@ declare const SMUSH_BUILD_ID: string;
 import { hasPixelEffects } from "./finishing-settings";
 export async function paintPixelEffects(canvas: HTMLCanvasElement, fields: Record<string, string>, signal: AbortSignal) {
   if (!hasPixelEffects(fields)) return;
+  if (Number(fields.sharpen || 0) > 0 && canvas.width * canvas.height > 12000000) throw new Error("Resize below 12 megapixels before sharpening.");
   signal.throwIfAborted();
   const worker = new Worker(`/pixel-worker.js?v=${SMUSH_BUILD_ID}`, { type: "module" });
   let abort: () => void = () => {};
