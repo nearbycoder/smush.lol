@@ -1,8 +1,9 @@
+declare const SMUSH_BUILD_ID: string;
 let cached: { file: File; blob: Blob } | undefined;
 export async function removeBackground(file: File, pixels: ImageData, signal: AbortSignal): Promise<Blob> {
   signal.throwIfAborted();
   if (cached?.file === file) return cached.blob;
-  const worker = new Worker("/background-worker.js", { type: "module" });
+  const worker = new Worker(`/background-worker.js?v=${SMUSH_BUILD_ID}`, { type: "module" });
   try {
     const blob = await new Promise<Blob>((resolve, reject) => {
       const abort = () => reject(signal.reason);

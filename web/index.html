@@ -449,6 +449,9 @@
             <div class="creative-content">
               <section class="creative-section extra-controls" aria-labelledby="color-title">
                 <h3 id="color-title">Color adjustments</h3>
+                <label class="creative-field">Exposure (stops) <input name="exposure" type="number" min="-3" max="3" step="0.1" value="0" /></label>
+                <label class="creative-field">Contrast (%) <input name="contrast" type="number" min="0" max="200" value="100" /></label>
+                <p class="settings-note">Exposure 0 and contrast 100% leave tones unchanged. Each exposure stop doubles or halves RGB intensity, then contrast adjusts around mid-gray. Strong settings can clip highlights or shadows.</p>
                 <label class="creative-field">Color filter <select name="colorFilter"><option value="none">Original colors</option><option value="grayscale">Grayscale</option><option value="sepia">Sepia</option><option value="invert">Invert</option></select></label>
                 <label class="creative-field">Filter strength (%) <input name="filterAmount" type="number" min="0" max="100" value="100" /></label>
                 <p class="settings-note">Applies before redaction, watermarks and borders. Set strength to zero to keep the original colors. Adjustments run locally in a cancellable worker.</p>

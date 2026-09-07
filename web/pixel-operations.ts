@@ -1,8 +1,12 @@
 import { finishingSettings } from "./finishing-settings";
 export function adjustPixels(data: Uint8ClampedArray, width: number, height: number, fields: Record<string, string>) {
   const settings = finishingSettings(fields), amount = Number(settings.filterAmount) / 100;
+  const contrast = Number(settings.contrast) / 100, exposure = 2 ** Number(settings.exposure);
+  // A lookup table avoids repeated exposure/contrast arithmetic on large images.
+  const tones = Uint8ClampedArray.from({ length: 256 }, (_, n) => (n * exposure - 128) * contrast + 128);
   for (let i = 0; i < data.length; i += 4) {
     if (!data[i + 3]) continue;
+    for (let c = 0; c < 3; c++) data[i+c] = tones[data[i+c]!]!;
     const r = data[i]!, g = data[i + 1]!, b = data[i + 2]!;
     let color = [r, g, b];
     if (settings.colorFilter === "grayscale") { const y = .2126 * r + .7152 * g + .0722 * b; color = [y, y, y]; }
