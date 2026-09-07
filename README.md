@@ -172,3 +172,5 @@ The Image toolbox operates locally on the original source or current export. Col
 Pixel color picker supports clicking the rendered image or entering exact X/Y coordinates, displays RGBA and eight-digit HEX, and copies the selected color. Its raster is capped at 12,000px per side; alpha is preserved.
 
 Histogram & statistics shows RGB or luminance distributions, mean luminance, transparency exclusions and black/white counts from a bounded 1024px sample. Download all 256 bins as CSV.
+
+Print size & DPI calculates print dimensions in inches/centimeters, effective DPI at a desired width and the required pixel dimensions at a chosen DPI. It reports when the source falls short and exports a text report without altering pixels or metadata.
