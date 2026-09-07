@@ -4,7 +4,7 @@ export function fittedImage(image: CanvasImageSource, sw: number, sh: number, wi
   if (background) { ctx.fillStyle = background; ctx.fillRect(0, 0, width, height); }
   const rect = fitRect(sw, sh, width, height, cover); ctx.drawImage(image, rect.x, rect.y, rect.width, rect.height); return canvas;
 }
-export function ico(images: Array<{ size: number; png: Uint8Array }>): Uint8Array {
+export function ico(images: Array<{ size: number; png: Uint8Array }>): Uint8Array<ArrayBuffer> {
   if (!images.length || images.length > 16 || images.some(i => !Number.isInteger(i.size) || i.size < 1 || i.size > 256)) throw new Error("Invalid icon dimensions.");
   const header = 6 + images.length * 16, result = new Uint8Array(header + images.reduce((sum, image) => sum + image.png.length, 0)), view = new DataView(result.buffer);
   view.setUint16(2, 1, true); view.setUint16(4, images.length, true); let offset = header;
