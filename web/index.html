@@ -445,9 +445,11 @@
           </details>
 
           <details id="finishing-tools" class="advanced-options">
-            <summary><span>Image finishing</span><small>Borders &amp; canvas</small><i aria-hidden="true">＋</i></summary>
+            <summary><span>Image finishing</span><small>Borders, corners &amp; canvas</small><i aria-hidden="true">＋</i></summary>
             <div class="creative-content">
               <section class="creative-section extra-controls" aria-labelledby="border-title">
+                <label class="creative-field">Corner radius (% of shorter side) <input name="cornerRadius" type="number" min="0" max="50" value="0" /></label>
+                <p class="settings-note">Round the outside edge after adding padding. Use 50% on a square for a circle. PNG, WebP and AVIF keep corners transparent; JPEG uses your background color.</p>
                 <h3 id="border-title">Border &amp; padding</h3>
                 <label class="creative-field">Border width (px per side) <input name="borderSize" type="number" min="0" max="1024" value="0" /></label>
                 <label class="creative-field creative-color">Border color <input name="borderColor" type="color" value="#ffffff" /></label>

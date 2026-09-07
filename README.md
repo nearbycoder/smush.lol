@@ -184,3 +184,5 @@ Split image into tiles exports a full-resolution 1–10 row/column PNG grid with
 Sprite sheet combines up to 50 queued originals/completed exports (or the current image) into a transparent PNG atlas. Choose cell size, columns and spacing; images fit without cropping. ZIP includes numbered CSS classes and a JSON map retaining source names. Pixel and byte budgets reject oversized sheets before download.
 
 Image finishing includes solid or transparent borders up to 1,024 pixels per side. Padding is added after resizing; saved recipes, undo/redo, and batch exports retain the settings. JPEG output flattens transparency onto the selected background.
+
+Rounded corners use a percentage of the shorter finished edge (0–50%). They apply after borders, preserve alpha in PNG/WebP/AVIF, and use the chosen background for JPEG. Square images at 50% become circular.
