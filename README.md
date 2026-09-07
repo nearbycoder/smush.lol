@@ -186,3 +186,5 @@ Sprite sheet combines up to 50 queued originals/completed exports (or the curren
 Image finishing includes solid or transparent borders up to 1,024 pixels per side. Padding is added after resizing; saved recipes, undo/redo, and batch exports retain the settings. JPEG output flattens transparency onto the selected background.
 
 Rounded corners use a percentage of the shorter finished edge (0–50%). They apply after borders, preserve alpha in PNG/WebP/AVIF, and use the chosen background for JPEG. Square images at 50% become circular.
+
+Grayscale, sepia, and invert filters offer 0–100% strength. Pixel adjustments run in a cancellable worker before redaction, watermarks, and borders, preserve alpha, and carry through recipes and batch exports.
