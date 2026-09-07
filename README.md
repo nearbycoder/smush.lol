@@ -178,3 +178,5 @@ Print size & DPI calculates print dimensions in inches/centimeters, effective DP
 Favicon pack produces transparent-padded or center-cropped square PNGs at 16/32/48/180/192/512px, a three-size PNG-backed ICO, and an HTML link snippet in a ZIP. The source/export choice controls whether prior edits are included.
 
 Social image pack exports four named dimensions (1080px square, 1080×1350 portrait, 1080×1920 story, 1200×630 landscape), individually or together. Choose center crop or contain with a custom background, and JPEG quality 90 or PNG. Every file is named with its dimensions.
+
+Split image into tiles exports a full-resolution 1–10 row/column PNG grid with a JSON coordinate map. Integer boundaries preserve every source pixel even for uneven dimensions. Each tile must fit within 12,000px per side; encoded data is capped at 100 MB.
