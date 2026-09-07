@@ -449,6 +449,10 @@
             <div class="creative-content">
               <section class="creative-section extra-controls" aria-labelledby="color-title">
                 <h3 id="color-title">Color adjustments</h3>
+                <label><input name="trimTransparent" type="checkbox" value="true" /> Trim transparent edges</label>
+                <label class="creative-field">Ignore alpha at or below (0–254) <input name="trimThreshold" type="number" min="0" max="254" value="0" /></label>
+                <label class="creative-field">Retain edge margin (source px) <input name="trimPadding" type="number" min="0" max="512" value="0" /></label>
+                <p class="settings-note">Finds visible pixels after your crop, before resizing. Margin stays within the source. Uses a cancellable local scan, up to 12 megapixels; entirely transparent images report an error.</p>
                 <label><input name="pixelArt" type="checkbox" value="true" /> Pixel-art resizing (nearest neighbor)</label>
                 <div class="creative-actions" role="group" aria-label="Pixel art scale"><button type="button" class="creative-action" data-pixel-scale="2">2× pixels</button><button type="button" class="creative-action" data-pixel-scale="4">4× pixels</button><button type="button" class="creative-action" data-pixel-scale="8">8× pixels</button></div>
                 <p class="settings-note">Keeps hard pixel edges. Scale buttons use the current source and crop, allow enlargement, and select PNG. Custom dimensions also work; whole-number enlargement preserves an even pixel grid.</p>

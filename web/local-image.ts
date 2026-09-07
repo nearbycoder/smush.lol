@@ -1,4 +1,5 @@
 declare const SMUSH_BUILD_ID: string;
+import { trimImageRect } from "./trim-image";
 import { paintPixelEffects } from "./pixel-effects";
 import { hasFinishing } from "./finishing-settings";
 import { finishCanvas } from "./finishing";
@@ -57,7 +58,8 @@ export async function renderImage(file: File, fields: Record<string, string>, si
         release(); ({ image, release } = await decodeSource(new File([blob], "cutout.png", { type: "image/png" })));
       } finally { raw.width = raw.height = 0; }
     }
-    const rect = cropRect(image.naturalWidth, image.naturalHeight, fields);
+    let rect = cropRect(image.naturalWidth, image.naturalHeight, fields);
+    if (["true", "on"].includes(fields.trimTransparent ?? "")) rect = await trimImageRect(image, rect, fields, signal);
     const { width, height, rotated, settings } = outputSize(rect.width, rect.height, fields);
     let canvas = document.createElement("canvas"); canvas.width = width; canvas.height = height;
     const ctx = canvas.getContext("2d")!;

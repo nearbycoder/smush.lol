@@ -995,6 +995,7 @@ mountToolbox(result => result ? (resultBlob ? new File([resultBlob], resultFilen
 
 document.querySelectorAll<HTMLButtonElement>("[data-pixel-scale]").forEach(button => button.addEventListener("click", () => {
   if (!sourceInfo.width || !sourceInfo.height) { showToast("Choose an image before scaling pixels.", true); return; }
+  if (["true", "on"].includes(formFields(controls).trimTransparent ?? "")) { showToast("For exact pixel scaling, export the trimmed image and load it first.", true); return; }
   const fields = formFields(controls), rect = cropRect(sourceInfo.width, sourceInfo.height, fields), scale = Number(button.dataset.pixelScale);
   const rotated = ["90", "270"].includes(fields.rotate || "0");
   const width = (rotated ? rect.height : rect.width) * scale, height = (rotated ? rect.width : rect.height) * scale;
