@@ -243,7 +243,9 @@ for (const tab of [originalTab, resultTab, compareTab]) {
 }
 
 async function loadFile(file: File): Promise<void> {
-  try { const safe = await safeSource(file); if (safe !== file) file = new File([safe], file.name, { type: safe.type }); } catch (error) { showToast((error as Error).message, true); return; }
+  const signal = sourceRequest.start();
+  try { const safe = await safeSource(file); if (safe !== file) file = new File([safe], file.name, { type: safe.type }); } catch (error) { if (!signal.aborted) showToast((error as Error).message, true); return; }
+  if (signal.aborted) return;
   if (!isSupportedImage(file)) {
     showToast("Choose a supported image file.", true);
     return;
@@ -257,7 +259,6 @@ async function loadFile(file: File): Promise<void> {
   effectEditor.sourceChanged();
   metadataInspector?.sourceChanged();
   editHistory?.reset();
-  const signal = sourceRequest.start();
   conversionRequest.cancel();
   setBusy(false);
   urlButton.disabled = false;
@@ -952,7 +953,13 @@ window.addEventListener("beforeunload", () => {
 
 resetControls();
 
-byId("local-only").addEventListener("change", () => { conversionRequest.cancel(); sourceRequest.cancel(); setBusy(false); queue.cancelAll(); updateFormatSettings(); });
+byId("local-only").addEventListener("change", () => {
+  conversionRequest.cancel();
+  if (urlButton.textContent === "Loading…") { sourceRequest.cancel(); urlButton.disabled = false; urlButton.textContent = "Load"; }
+  setBusy(false);
+  for (const job of queue.jobs) if (job.status === "processing" || job.status === "queued") queue.cancel(job.id);
+  updateFormatSettings();
+});
 
 controls.addEventListener("change", updateFormatSettings);
 byId("operation-cancel").addEventListener("click", () => { conversionRequest.cancel(); setBusy(false); showToast("Conversion cancelled."); });
