@@ -449,6 +449,9 @@
             <div class="creative-content">
               <section class="creative-section extra-controls" aria-labelledby="color-title">
                 <h3 id="color-title">Color adjustments</h3>
+                <label><input name="pixelArt" type="checkbox" value="true" /> Pixel-art resizing (nearest neighbor)</label>
+                <div class="creative-actions" role="group" aria-label="Pixel art scale"><button type="button" class="creative-action" data-pixel-scale="2">2× pixels</button><button type="button" class="creative-action" data-pixel-scale="4">4× pixels</button><button type="button" class="creative-action" data-pixel-scale="8">8× pixels</button></div>
+                <p class="settings-note">Keeps hard pixel edges. Scale buttons use the current source and crop, allow enlargement, and select PNG. Custom dimensions also work; whole-number enlargement preserves an even pixel grid.</p>
                 <label class="creative-field">Exposure (stops) <input name="exposure" type="number" min="-3" max="3" step="0.1" value="0" /></label>
                 <label class="creative-field">Contrast (%) <input name="contrast" type="number" min="0" max="200" value="100" /></label>
                 <p class="settings-note">Exposure 0 and contrast 100% leave tones unchanged. Each exposure stop doubles or halves RGB intensity, then contrast adjusts around mid-gray. Strong settings can clip highlights or shadows.</p>
