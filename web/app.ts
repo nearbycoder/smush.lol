@@ -1,3 +1,4 @@
+import { mountToolbox } from "./toolbox";
 import { mountHistory } from "./history";
 import { mountMetadata } from "./metadata";
 import { mountCollections } from "./collections";
@@ -988,3 +989,6 @@ editHistory = mountHistory(controls, () => {
   byId("watermark-logo-note").textContent = state.fields.watermarkLogo ? "Logo restored from editing history." : "No logo. Text is used when no logo is selected.";
   refreshControls();
 });
+
+mountToolbox(result => result ? (resultBlob ? new File([resultBlob], resultFilename, { type: resultBlob.type }) : null) : selectedFile ?? remoteSourceFile,
+  result => { const files = queue.jobs.flatMap(job => result ? (job.result ? [new File([job.result.blob], job.result.filename, { type: job.result.blob.type })] : []) : [job.file]); const current = result ? (resultBlob ? new File([resultBlob], resultFilename, { type: resultBlob.type }) : null) : selectedFile ?? remoteSourceFile; return files.length ? files : current ? [current] : []; });
