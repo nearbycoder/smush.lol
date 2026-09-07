@@ -1403,3 +1403,8 @@ footer p { margin: 0; color: var(--ink-soft); font-size: 0.7rem; text-align: cen
 .creative-color input::-moz-color-swatch { border: 1px solid #aaa398; border-radius: 3px; }
 .creative-action:focus-visible, .creative-field input:focus-visible, .creative-field select:focus-visible, .logo-status button:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; }
 @media (max-width: 650px) { .creative-content { padding-inline: 18px; } }
+
+.local-processing-settings { padding: 18px 24px; border-bottom: 1px solid var(--paper-deep); }
+.local-processing-settings .check-row { min-height: 44px; margin: 0; }
+.local-processing-settings .check-row small { margin-top: 4px; color: var(--ink-soft); line-height: 1.5; }
+.local-processing-settings .settings-note { margin-top: 12px; font-size: .68rem; line-height: 1.6; overflow-wrap: anywhere; }

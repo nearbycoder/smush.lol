@@ -217,8 +217,14 @@
             <p class="settings-note">Up to 20 recipes in this browser. Saving an existing name updates it. No images or URLs are saved.</p>
           </section>
 
-          <label class="check-row"><span><strong>Browser-only processing</strong><small>Files stay on this device. Applies to the editor and queue.</small></span><input id="local-only" name="localOnly" type="checkbox" value="true" /><i aria-hidden="true"></i></label>
-          <p id="local-encoding-note" class="settings-note" hidden>Local encoding uses browser resampling, standard JPEG and PNG compression. Server encoding options are disabled. SVG and AVIF always process locally.</p>
+          <section class="local-processing-settings" aria-labelledby="local-processing-title">
+            <label class="check-row">
+              <span><strong id="local-processing-title">Browser-only processing</strong><small>Files stay on this device. Applies to the editor and queue.</small></span>
+              <input id="local-only" name="localOnly" type="checkbox" value="true" />
+              <i aria-hidden="true"></i>
+            </label>
+            <p id="local-encoding-note" class="settings-note" hidden>Local encoding uses browser resampling, standard JPEG and PNG compression. Server encoding options are disabled. SVG and AVIF always process locally.</p>
+          </section>
           <section class="crop-settings">
             <div class="queue-actions"><button id="crop-open" type="button" class="small-button">Crop image</button><button id="crop-remove" type="button" class="small-button" disabled>Remove crop</button></div>
             <p id="crop-summary" class="settings-note">No crop. Cropping happens before resize and rotation.</p>
