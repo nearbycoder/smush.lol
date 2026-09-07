@@ -1,3 +1,4 @@
+declare const SMUSH_BUILD_ID: string;
 import { paintPixelEffects } from "./pixel-effects";
 import { hasFinishing } from "./finishing-settings";
 import { finishCanvas } from "./finishing";
@@ -80,7 +81,7 @@ export async function localResponse(file: File, fields: Record<string, string>, 
     let result: { output: Blob; quality: number };
     if (format === "avif" || format === "webp") {
       signal.throwIfAborted();
-      const worker = new Worker("/codec-worker.js", { type: "module" });
+      const worker = new Worker(`/codec-worker.js?v=${SMUSH_BUILD_ID}`, { type: "module" });
       try {
         result = await new Promise((resolve, reject) => {
           const abort = () => reject(signal.reason);

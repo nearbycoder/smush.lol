@@ -10,3 +10,11 @@ test("filters mix strength while preserving alpha and transparent pixels",()=>{
  expect(savedSettings({colorFilter:"sepia",filterAmount:"50"},true).fields.filterAmount).toBe("50");
  expect(()=>savedSettings({colorFilter:"bad"},true)).toThrow();
 });
+test("exposure and contrast have neutral defaults, clamp extremes and round-trip recipes",()=>{
+ expect(pixel([64,128,240,128],{})).toEqual([64,128,240,128]);
+ expect(pixel([64,128,240,128],{exposure:"1"})).toEqual([128,255,255,128]);
+ expect(pixel([64,128,240,128],{contrast:"0"})).toEqual([128,128,128,128]);
+ expect(pixel([64,128,240,128],{contrast:"200"})).toEqual([0,128,255,128]);
+ expect(savedSettings({exposure:"-1.5",contrast:"120"},true).fields.exposure).toBe("-1.5");
+ expect(()=>savedSettings({exposure:"4"},true)).toThrow();
+});

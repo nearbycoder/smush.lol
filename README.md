@@ -188,3 +188,5 @@ Image finishing includes solid or transparent borders up to 1,024 pixels per sid
 Rounded corners use a percentage of the shorter finished edge (0–50%). They apply after borders, preserve alpha in PNG/WebP/AVIF, and use the chosen background for JPEG. Square images at 50% become circular.
 
 Grayscale, sepia, and invert filters offer 0–100% strength. Pixel adjustments run in a cancellable worker before redaction, watermarks, and borders, preserve alpha, and carry through recipes and batch exports.
+
+Exposure adjusts RGB intensity from −3 to +3 stops, followed by 0–200% contrast around mid-gray. Neutral defaults preserve tones. Worker URLs are versioned at build time so cached processing code cannot outlive the interface version.

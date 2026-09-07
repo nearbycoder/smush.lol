@@ -1,8 +1,9 @@
+declare const SMUSH_BUILD_ID: string;
 import { hasPixelEffects } from "./finishing-settings";
 export async function paintPixelEffects(canvas: HTMLCanvasElement, fields: Record<string, string>, signal: AbortSignal) {
   if (!hasPixelEffects(fields)) return;
   signal.throwIfAborted();
-  const worker = new Worker("/pixel-worker.js", { type: "module" });
+  const worker = new Worker(`/pixel-worker.js?v=${SMUSH_BUILD_ID}`, { type: "module" });
   let abort: () => void = () => {};
   try {
     const pixels = await new Promise<ImageData>((resolve, reject) => {
