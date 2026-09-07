@@ -444,6 +444,19 @@
             </div>
           </details>
 
+          <details id="finishing-tools" class="advanced-options">
+            <summary><span>Image finishing</span><small>Borders &amp; canvas</small><i aria-hidden="true">＋</i></summary>
+            <div class="creative-content">
+              <section class="creative-section extra-controls" aria-labelledby="border-title">
+                <h3 id="border-title">Border &amp; padding</h3>
+                <label class="creative-field">Border width (px per side) <input name="borderSize" type="number" min="0" max="1024" value="0" /></label>
+                <label class="creative-field creative-color">Border color <input name="borderColor" type="color" value="#ffffff" /></label>
+                <label><input name="borderTransparent" type="checkbox" value="true" /> Transparent padding</label>
+                <p class="settings-note">Adds space around the finished image without cropping. Zero disables the border. PNG, WebP and AVIF preserve transparent padding; JPEG fills it with your background color. Applies locally to editor and queue.</p>
+              </section>
+            </div>
+          </details>
+
           <details id="multiple-exports" class="advanced-options">
             <summary><span>Export several sizes</span><small>Thumbnails, medium, and full size</small><i aria-hidden="true">＋</i></summary>
             <div class="multi-export-content">
