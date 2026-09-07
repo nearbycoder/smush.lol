@@ -1,9 +1,12 @@
+import { hasEffects } from "./effect-settings";
+import { paintEffects } from "./effects";
+import { removeBackground } from "./background";
 import { cropRect } from "./crop-geometry";
 import { parseTransformSettings, MAX_PIXELS, MAX_DIMENSION } from "../src/transform";
 import { fitTargetSize } from "../src/target-size";
 
 export const isSvg = (file: File) => file.type === "image/svg+xml" || /\.svg$/i.test(file.name);
-export const usesBrowser = (file: File | null, fields: Record<string, string>) => ["true", "on"].includes(fields.localOnly ?? "") || fields.format === "avif" || Boolean(file && isSvg(file));
+export const usesBrowser = (file: File | null, fields: Record<string, string>) => ["true", "on"].includes(fields.localOnly ?? "") || hasEffects(fields) || fields.format === "avif" || Boolean(file && isSvg(file));
 export async function safeSource(file: File): Promise<Blob> {
   if (!isSvg(file)) return file;
   const xml = new DOMParser().parseFromString(await file.text(), "image/svg+xml");
@@ -38,9 +41,18 @@ export function outputSize(width: number, height: number, fields: Record<string,
 }
 export async function renderImage(file: File, fields: Record<string, string>, signal: AbortSignal): Promise<HTMLCanvasElement> {
   signal.throwIfAborted();
-  const { image, release } = await decodeSource(file);
+  let { image, release } = await decodeSource(file);
   try {
     signal.throwIfAborted();
+    if (fields.removeBackground === "true") {
+      const raw = document.createElement("canvas"); raw.width = image.naturalWidth; raw.height = image.naturalHeight;
+      if (raw.width * raw.height > 12000000) throw new Error("Use a source under 12 megapixels for background removal.");
+      try {
+        const context = raw.getContext("2d")!; context.drawImage(image, 0, 0);
+        const blob = await removeBackground(file, context.getImageData(0, 0, raw.width, raw.height), signal);
+        release(); ({ image, release } = await decodeSource(new File([blob], "cutout.png", { type: "image/png" })));
+      } finally { raw.width = raw.height = 0; }
+    }
     const rect = cropRect(image.naturalWidth, image.naturalHeight, fields);
     const { width, height, rotated, settings } = outputSize(rect.width, rect.height, fields);
     const canvas = document.createElement("canvas"); canvas.width = width; canvas.height = height;
@@ -51,7 +63,7 @@ export async function renderImage(file: File, fields: Record<string, string>, si
     ctx.imageSmoothingQuality = "high";
     const dw = rotated ? height : width, dh = rotated ? width : height;
     ctx.drawImage(image, rect.x, rect.y, rect.width, rect.height, -dw / 2, -dh / 2, dw, dh); ctx.restore();
-    return canvas;
+    try { await paintEffects(canvas, fields, signal); signal.throwIfAborted(); return canvas; } catch (error) { canvas.width = canvas.height = 0; throw error; }
   } finally { release(); }
 }
 export const canvasBlob = (canvas: HTMLCanvasElement, type = "image/png", quality?: number) => new Promise<Blob>((resolve, reject) => canvas.toBlob(blob => blob && blob.type === type ? resolve(blob) : reject(new Error(`This browser cannot encode ${type}.`)), type, quality));

@@ -398,6 +398,26 @@
             </div>
           </details>
 
+          <details class="advanced-options" id="creative-tools">
+            <summary><span>Image editing tools</span><small>Cutouts, redaction &amp; watermarks</small><i aria-hidden="true">＋</i></summary>
+            <div class="tool-content">
+              <label><input name="removeBackground" id="remove-background" type="checkbox" value="true" /> Remove background</label>
+              <p class="settings-note">Isolate people or products locally. First use downloads a 219 MB model from Hugging Face plus its runtime. May take a minute; sources up to 12 megapixels. Choose PNG, WebP or AVIF for transparency.</p>
+              <button type="button" class="small-button" id="redact-open">Blur / redact regions</button>
+              <input type="hidden" name="redactions" value="[]" />
+              <label>Watermark text <input name="watermarkText" maxlength="120" placeholder="© Your name" /></label>
+              <label>Or upload a logo <input id="watermark-upload" type="file" accept="image/png,image/jpeg,image/webp" /></label>
+              <input type="hidden" name="watermarkLogo" value="" />
+              <p class="settings-note" id="watermark-logo-note">No logo. Text is used when no logo is selected.</p>
+              <button type="button" class="small-button" id="watermark-remove">Remove logo</button>
+              <label>Placement <select name="watermarkPosition"><option value="bottom-right">Bottom right</option><option value="bottom-left">Bottom left</option><option value="top-right">Top right</option><option value="top-left">Top left</option><option value="center">Center</option></select></label>
+              <label>Opacity (%) <input name="watermarkOpacity" type="number" min="1" max="100" value="70" /></label>
+              <label>Width (% of image) <input name="watermarkSize" type="number" min="2" max="80" value="20" /></label>
+              <label>Text color <input name="watermarkColor" type="color" value="#ffffff" /></label>
+              <p class="settings-note">Edits process locally and apply to batch exports. Convert to preview the finished image.</p>
+            </div>
+          </details>
+
           <details id="multiple-exports" class="advanced-options">
             <summary><span>Export several sizes</span><small>Thumbnails, medium, and full size</small><i aria-hidden="true">＋</i></summary>
             <div class="multi-export-content">
@@ -410,6 +430,7 @@
             </div>
           </details>
 
+          <p id="operation-progress" class="settings-note" aria-live="polite"></p><button type="button" id="operation-cancel" class="small-button" hidden>Cancel conversion</button>
           <button id="smush-button" class="smush-button" type="submit" disabled>
             <span class="button-copy"><strong>Convert image</strong></span>
             <span class="button-arrow" aria-hidden="true">→</span>
@@ -432,6 +453,15 @@
       </div>
     </footer>
 
+    <dialog id="redact-dialog" aria-labelledby="redact-title">
+      <h2 id="redact-title">Blur or redact</h2>
+      <p>Drag a rectangle, or enter percentages below. Use solid black to remove sensitive content; blur is a visual effect.</p>
+      <canvas id="redact-canvas" aria-label="Draw a region to obscure"></canvas>
+      <p id="redact-count" aria-live="polite"></p>
+      <div class="tool-content"><label>Effect <select id="redact-mode"><option value="black">Solid black</option><option value="blur">Blur</option></select></label>
+      <div class="region-inputs"><label>Left % <input id="redact-x" type="number" min="0" max="99" value="10" /></label><label>Top % <input id="redact-y" type="number" min="0" max="99" value="10" /></label><label>Width % <input id="redact-w" type="number" min="1" max="100" value="25" /></label><label>Height % <input id="redact-h" type="number" min="1" max="100" value="25" /></label></div></div>
+      <div class="queue-actions"><button type="button" id="redact-add" class="small-button">Add region</button><button type="button" id="redact-undo" class="small-button">Remove last</button><button type="button" id="redact-clear" class="small-button">Clear regions</button><button type="button" id="redact-cancel" class="small-button">Cancel</button><button type="button" id="redact-apply" class="small-button">Apply regions</button></div>
+    </dialog>
     <dialog id="crop-dialog" aria-labelledby="crop-title">
       <h2 id="crop-title">Crop image</h2>
       <p>Drag to position the crop, or use the horizontal and vertical controls.</p>

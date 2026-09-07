@@ -1,3 +1,4 @@
+import { mountEffects } from "./effect-editor";
 import { localResponse, usesBrowser, safeSource } from "./local-image";
 import { copyImage } from "./clipboard";
 import { exportVariants } from "./export-variants";
@@ -110,6 +111,7 @@ function formatBytes(bytes: number): string {
 }
 
 const queue = mountQueue(controls, showToast);
+const effectEditor = mountEffects(controls, () => selectedFile ?? remoteSourceFile, showToast);
 const cropEditor = mountCropEditor(() => originalUrl, showToast, updateCropSummary);
 function updateCropSummary(): void {
   const cropped = Boolean(formFields(controls).cropRatio);
@@ -247,6 +249,7 @@ async function loadFile(file: File): Promise<void> {
   }
 
   cropEditor.sourceChanged();
+  effectEditor.sourceChanged();
   const signal = sourceRequest.start();
   conversionRequest.cancel();
   setBusy(false);
@@ -278,7 +281,7 @@ async function loadFile(file: File): Promise<void> {
   sourceName.textContent = file.name;
   dropZone.hidden = true;
   previewShell.hidden = false;
-  smushButton.disabled = false;
+  smushButton.disabled = busy;
   updateCropSummary();
   updateFormatSettings();
   controlHint.textContent = "Ready to convert. The original file will not be changed.";
@@ -365,6 +368,7 @@ async function loadRemoteImage(value: string): Promise<void> {
   }
 
   cropEditor.sourceChanged();
+  effectEditor.sourceChanged();
   const signal = sourceRequest.start();
   conversionRequest.cancel();
   setBusy(false);
@@ -395,7 +399,7 @@ async function loadRemoteImage(value: string): Promise<void> {
     sourceName.textContent = remoteDisplayName(source);
     dropZone.hidden = true;
     previewShell.hidden = false;
-    smushButton.disabled = false;
+    smushButton.disabled = busy;
     updateCropSummary();
     controlHint.textContent = "Ready to convert from the source URL.";
     setView("original");
@@ -437,6 +441,7 @@ urlForm.addEventListener("submit", (event) => {
 
 replaceButton.addEventListener("click", () => {
   cropEditor.sourceChanged();
+  effectEditor.sourceChanged();
   remoteSourceFile = null;
   sourceRequest.cancel();
   conversionRequest.cancel();
@@ -676,6 +681,9 @@ function resetControls(): void {
   for (const [key, value] of Object.entries({ cropRatio: "", cropScale: "100", cropX: "50", cropY: "50" })) {
     controls.querySelector<HTMLInputElement>(`input[name="${key}"]`)!.value = value;
   }
+  controls.querySelector<HTMLInputElement>('[name="redactions"]')!.value = "[]";
+  controls.querySelector<HTMLInputElement>('[name="watermarkLogo"]')!.value = "";
+  byId("watermark-logo-note").textContent = "No logo. Text is used when no logo is selected.";
   flopInput.value = "false";
   flipInput.value = "false";
   advancedOptions.open = false;
@@ -788,6 +796,8 @@ resetButton.addEventListener("click", () => {
 
 function setBusy(nextBusy: boolean): void {
   busy = nextBusy;
+  byId("operation-cancel").hidden = !nextBusy;
+  if (!nextBusy) byId("operation-progress").textContent = "";
   processing.hidden = !nextBusy;
   smushButton.disabled = nextBusy || (!selectedFile && !selectedRemoteUrl);
   smushButton.querySelector("strong")!.textContent = nextBusy ? "Processing…" : "Convert image";
@@ -932,3 +942,7 @@ window.addEventListener("beforeunload", () => {
 resetControls();
 
 byId("local-only").addEventListener("change", () => { conversionRequest.cancel(); sourceRequest.cancel(); setBusy(false); queue.cancelAll(); updateFormatSettings(); });
+
+controls.addEventListener("change", updateFormatSettings);
+byId("operation-cancel").addEventListener("click", () => { conversionRequest.cancel(); setBusy(false); showToast("Conversion cancelled."); });
+document.addEventListener("processing-progress", event => { byId("operation-progress").textContent = (event as CustomEvent<string>).detail; });
