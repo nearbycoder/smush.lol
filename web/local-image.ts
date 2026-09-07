@@ -27,7 +27,7 @@ export async function decodeSource(file: File): Promise<{ image: HTMLImageElemen
   catch (error) { release(); throw new Error(error instanceof Error && error.message.includes("megapixels") ? error.message : "This browser cannot decode this image. Try PNG, JPEG, WebP, AVIF, or a self-contained SVG."); }
 }
 export function outputSize(width: number, height: number, fields: Record<string, string>) {
-  const settings = parseTransformSettings({ ...fields, format: fields.format === "avif" ? "webp" : fields.format });
+  const settings = parseTransformSettings({ ...fields, format: fields.format === "avif" ? "jpeg" : fields.format });
   const rotated = settings.rotate === 90 || settings.rotate === 270;
   const w = rotated ? height : width, h = rotated ? width : height;
   let scale = Math.min(settings.width ? settings.width / w : Infinity, settings.height ? settings.height / h : Infinity);
