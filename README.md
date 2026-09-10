@@ -214,3 +214,20 @@ All dropdowns use a shared custom combobox with styled menus, including dynamica
 The settings introduction groups undo/redo with the header, uses larger preset and crop controls, and keeps recipe management in a collapsed section. Recipe actions adapt to empty and saved states, distinguish saving from updating, and separate file transfer from everyday use. Browser layout and recipe-flow checks are in `tests/browser/settings-panel.js`.
 
 Homepage and API docs include static Open Graph and Twitter large-image metadata so link previews work without JavaScript. The homepage also describes the app with WebApplication structured data and three product images. The 1200×630 JPEG social card stays under 1 MB, and preview descriptions stay within 125 characters. Original PNGs remain available as structured-data screenshots. All assets live in `web/social/` and are copied to `public/social/` during every build; keep their public URLs and declared dimensions in sync when replacing them. Use a new filename for updated artwork to avoid stale previews cached by chat apps.
+
+## API and MCP integrations
+
+The hosted MCP endpoint is `https://smush.lol/mcp` (Streamable HTTP, stateless JSON responses, no authentication). It exposes `get_capabilities`, `inspect_image`, `transform_image`, and `create_image_url`, plus `smush://usage` and `smush://capabilities` resources. Image transformations return actual MCP image content and metadata. Original and resulting images are never stored by the app.
+
+For local stdio processing, install dependencies with Bun 1.4+ and run `bun run mcp`. A process-spawning client can use `{"command":"bun","args":["run","/absolute/path/to/smush.lol/src/mcp-stdio.ts"]}`. Inline image bytes stay on the machine running that process; URL sources are fetched from their public hosts. The hosted endpoint processes images on the hosted server.
+
+REST integrations can use `POST /api/inspect` and `POST /api/transform` with JSON. Pass `source: {url}` or `source: {base64, filename?}`, and optional typed `options` for transforms. The transform response includes `base64`, `mimeType`, `filename`, dimensions, output bytes, original bytes, format, and quality. Use the existing `/api/image` and `/api/smush` binary endpoints for larger files.
+
+- `/docs`: human-readable API and MCP examples with copy buttons.
+- `/openapi.json`: OpenAPI 3.1 schema generated from the same JSON option schemas used by MCP and REST validation.
+- `/api/capabilities`: server defaults, operations, limits, and browser-only feature distinctions.
+- `/llms.txt`: complete agent usage guide, generated from `src/usage.ts`; `/llm.txt` and `/LLM.txt` redirect to it.
+
+Inline source/output is limited to 4 MiB decoded, and JSON/MCP HTTP bodies to 6 MiB. Remote/multipart sources retain the 15 MiB limit; all processing retains the 48 MP and 12,000px output constraints. JSON/MCP rejects invalid types, unknown fields, malformed base64, and unsupported server formats. Public URL sources use the existing private-network checks and fetch limits. Hosted MCP validates Host/Origin; browser-origin MCP requests must come from the configured public origin or the matching localhost origin. JSON REST endpoints allow cross-origin requests.
+
+For self-hosting, set `SMUSH_PUBLIC_URL` to the public origin (default `https://smush.lol`) to update discovery links, generated transform URLs, and the allowed MCP host/origin. MCP GET/DELETE return 405 because there is no event stream or persistent session. No external services are required. Tests exercise real HTTP and stdio MCP clients, concurrent requests, image output decoding, source validation, and payload limits.

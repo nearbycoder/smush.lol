@@ -8,6 +8,7 @@
       content="Resize and convert image URLs or uploads with the smush.lol HTTP API. No API key required."
     />
     <meta name="theme-color" content="#fff7ea" />
+    <link rel="describedby" href="/llms.txt" type="text/plain" />
     <link rel="canonical" href="https://smush.lol/docs" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="smush.lol" />
@@ -43,7 +44,7 @@
       </a>
 
       <div class="header-meta">
-        <span class="runtime-pill"><span class="status-dot"></span>API docs</span>
+        <span class="runtime-pill"><span class="status-dot"></span>API &amp; MCP</span>
         <a class="tiny-link" href="/">Open editor <span aria-hidden="true">→</span></a>
       </div>
     </header>
@@ -51,11 +52,14 @@
     <main class="docs-main">
       <section class="docs-hero" aria-labelledby="docs-title">
         <span class="docs-kicker">HTTP API · Bun.Image</span>
-        <h1 id="docs-title">smush.lol API</h1>
-        <p>Transform a public image URL or upload a file. No API key required.</p>
+        <h1 id="docs-title">smush.lol API &amp; MCP</h1>
+        <p>Process images from your code or AI assistant. No API key required.</p>
         <div class="docs-endpoints" aria-label="Available endpoints">
           <a href="#remote-images"><span class="method method-get">GET</span><code>/api/image</code></a>
           <a href="#uploads"><span class="method method-post">POST</span><code>/api/smush</code></a>
+          <a href="#mcp"><span class="method method-post">MCP</span><code>/mcp</code></a>
+          <a href="/llms.txt">llms.txt ↗</a>
+          <a href="/openapi.json">OpenAPI ↗</a>
         </div>
       </section>
 
@@ -66,6 +70,8 @@
             <a href="#quick-start">Quick start</a>
             <a href="#remote-images">Remote images</a>
             <a href="#uploads">File uploads</a>
+            <a href="#json-api">JSON API</a>
+            <a href="#mcp">MCP setup</a>
             <a href="#parameters">Parameters</a>
             <a href="#response">Response</a>
             <a href="#errors">Errors</a>
@@ -94,7 +100,7 @@
 
             <div class="docs-callout">
               <strong>Authentication</strong>
-              <p>There is no API key or account. Send a request and the transformed image is returned as the response body.</p>
+              <p>There is no API key or account. Binary endpoints return image files, JSON endpoints return metadata and base64, and MCP tools return images to your assistant.</p>
             </div>
           </section>
 
@@ -189,7 +195,7 @@ const result = await response.blob();</code></pre>
               <span>04</span>
               <div>
                 <h2>Transform parameters</h2>
-                <p>The same fields work with both endpoints.</p>
+                <p>The same options work with the binary API, JSON API, and MCP. Use typed numbers and booleans for JSON/MCP; query and form fields are strings.</p>
               </div>
             </div>
 
@@ -292,6 +298,57 @@ const result = await response.blob();</code></pre>
               <strong>Remote source rules</strong>
               <p>Only public HTTP(S) URLs on standard web ports are accepted. Credentials, localhost, private networks, and non-web protocols are blocked. Images are processed in memory and are not stored by the application.</p>
             </div>
+          </section>
+
+          <section id="json-api" class="docs-section">
+            <div class="docs-section-heading"><span>08</span><div><h2>JSON API</h2><p>Inspect images or receive a converted image with its metadata.</p></div></div>
+            <p class="docs-copy"><code>POST /api/inspect</code> accepts a <code>source</code> and returns its filename, width, height, detected format, and byte size. <code>POST /api/transform</code> also accepts <code>options</code> and returns output metadata plus the actual image as standard base64.</p>
+            <div class="code-panel">
+              <div class="code-panel-header"><span>JSON conversion</span><button type="button" data-copy-target="json-example">Copy</button></div>
+              <pre id="json-example"><code>curl 'https://smush.lol/api/transform' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "source": {"url": "https://smush.lol/social/smush-social-card-v2.jpg"},
+    "options": {"width": 600, "format": "webp", "quality": 82}
+  }'</code></pre>
+            </div>
+            <p class="docs-copy">For local bytes, replace the source with <code>{"base64":"...","filename":"photo.png"}</code>. Supply exactly one source type, without a data-URL prefix. Decode the returned <code>base64</code> field and save it using <code>filename</code>; <code>mimeType</code>, dimensions, byte size, original size, format, and quality describe the result.</p>
+            <div class="docs-callout"><strong>Inline image limits</strong><p>Inline input and output are each limited to 4 MiB decoded. JSON request bodies are limited to 6 MiB. Use the binary upload or URL endpoint for larger results. JSON/MCP options reject unknown fields, unsupported formats, and invalid types.</p></div>
+            <p class="docs-copy">Discover defaults and limits at <a href="/api/capabilities">/api/capabilities</a>, or use the full <a href="/openapi.json">OpenAPI 3.1 schema</a>. The server exports WebP, JPEG, and PNG. AVIF and advanced editor effects are browser-only.</p>
+          </section>
+
+          <section id="mcp" class="docs-section">
+            <div class="docs-section-heading"><span>09</span><div><h2>Connect an AI assistant</h2><p>Use the same image processing through Model Context Protocol.</p></div></div>
+            <div class="base-url-card"><div><small>Streamable HTTP endpoint</small><code>https://smush.lol/mcp</code></div><button class="copy-button" type="button" data-copy-text="https://smush.lol/mcp">Copy</button></div>
+            <p class="docs-copy">Add this URL as a remote MCP server in your client, with no authentication. It uses stateless Streamable HTTP with JSON responses. There is no legacy SSE endpoint, session storage, or persistent result hosting. Client configuration varies; clients accepting <code>mcpServers</code> can use:</p>
+            <div class="code-panel"><div class="code-panel-header"><span>Remote MCP</span><button type="button" data-copy-target="mcp-config">Copy</button></div><pre id="mcp-config"><code>{
+  "mcpServers": {
+    "smush": {"url": "https://smush.lol/mcp"}
+  }
+}</code></pre></div>
+            <div class="docs-table-wrap"><table class="docs-table"><thead><tr><th>Tool</th><th>Use it to</th></tr></thead><tbody>
+              <tr><td><code>get_capabilities</code></td><td>Discover formats, options, limits, and documentation.</td></tr>
+              <tr><td><code>inspect_image</code></td><td>Read dimensions, format, filename, and byte size.</td></tr>
+              <tr><td><code>transform_image</code></td><td>Resize, compress, convert, rotate, flip, and adjust brightness or saturation. Returns an image and metadata.</td></tr>
+              <tr><td><code>create_image_url</code></td><td>Build a conversion URL for a public source without fetching it. The source must remain available.</td></tr>
+            </tbody></table></div>
+            <div class="code-panel"><div class="code-panel-header"><span>Example transform_image arguments</span><button type="button" data-copy-target="mcp-example">Copy</button></div><pre id="mcp-example"><code>{
+  "source": {"url": "https://smush.lol/social/smush-social-card-v2.jpg"},
+  "options": {"width": 600, "format": "webp"}
+}</code></pre></div>
+            <p class="docs-copy">MCP accepts the same URL or base64 source and typed options as the JSON API. Results contain image bytes in an MCP image content block; save that data to keep the result. Failures return <code>isError: true</code> with a message. Resources <code>smush://usage</code> and <code>smush://capabilities</code> provide in-client guidance.</p>
+            <h3>Run locally with stdio</h3>
+            <p class="docs-copy">Clone the repository, install Bun 1.4 or newer, and run <code>bun install --frozen-lockfile</code>. Start with <code>bun run mcp</code>, or configure a process-spawning client with an absolute path:</p>
+            <div class="code-panel"><div class="code-panel-header"><span>Local MCP</span><button type="button" data-copy-target="mcp-local">Copy</button></div><pre id="mcp-local"><code>{
+  "mcpServers": {
+    "smush": {
+      "command": "bun",
+      "args": ["run", "/absolute/path/to/smush.lol/src/mcp-stdio.ts"]
+    }
+  }
+}</code></pre></div>
+            <div class="docs-callout docs-callout-peach"><strong>Where processing happens</strong><p>Hosted API/MCP calls send images to the smush.lol server. Local stdio processes inline images on the machine running it and fetches URL sources from their public hosts. Neither mode stores images. Local filesystem paths are not tool inputs; pass image bytes as base64.</p></div>
+            <p class="docs-copy">The complete agent usage guide is available at <a href="/llms.txt">/llms.txt</a>. The aliases <code>/llm.txt</code> and <code>/LLM.txt</code> redirect there.</p>
           </section>
         </article>
       </div>

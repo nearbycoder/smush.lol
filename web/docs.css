@@ -370,6 +370,12 @@
 .docs-table td:first-child { width: 23%; }
 .docs-table td:last-child { width: 18%; }
 
+#mcp .docs-table-wrap { margin: 20px 0; }
+#mcp .docs-table { min-width: 0; }
+#mcp .docs-table td:first-child { width: 42%; }
+#mcp .docs-table td:last-child { width: auto; }
+#mcp h3 { margin-top: 28px; }
+
 .response-grid,
 .status-list {
   display: grid;
