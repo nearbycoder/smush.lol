@@ -1,5 +1,9 @@
 import { staticPlugin } from "@elysiajs/static";
 import { Elysia, t } from "elysia";
+import { agentError, capabilities, inspectImage, inspectSchema, readAgentJson, transformAgentImage, transformSchema } from "./agent-api";
+import { handleMcp } from "./mcp";
+import { openapi } from "./openapi";
+import { usageGuide } from "./usage";
 import { transformImage } from "./image";
 import { fetchRemoteImage, RemoteImageError } from "./remote-image";
 import {
@@ -92,6 +96,20 @@ function docsPage(): Response {
   });
 }
 
+const jsonApiHeaders = { "Cache-Control": "no-store", "Access-Control-Allow-Origin": "*", "X-Content-Type-Options": "nosniff" };
+async function agentResponse(request: Request, operation: "inspect" | "transform") {
+  try {
+    const input = await readAgentJson(request);
+    const result = operation === "inspect"
+      ? await inspectImage(inspectSchema.parse(input))
+      : await transformAgentImage(transformSchema.parse(input));
+    return Response.json(result, { headers: jsonApiHeaders });
+  } catch (error) {
+    const result = agentError(error);
+    return Response.json({ error: result.error }, { status: result.status, headers: jsonApiHeaders });
+  }
+}
+
 export const app = new Elysia({
   serve: {
     maxRequestBodySize: MAX_FILE_BYTES + 1024 * 1024,
@@ -103,6 +121,15 @@ export const app = new Elysia({
     version: Bun.version,
   }))
   .get("/docs", docsPage)
+  .get("/llms.txt", () => new Response(usageGuide, { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=3600", "X-Content-Type-Options": "nosniff" } }))
+  .get("/llm.txt", () => new Response(null, { status: 301, headers: { Location: "/llms.txt" } }))
+  .get("/LLM.txt", () => new Response(null, { status: 301, headers: { Location: "/llms.txt" } }))
+  .get("/openapi.json", () => Response.json(openapi, { headers: jsonApiHeaders }))
+  .get("/api/capabilities", () => Response.json(capabilities, { headers: jsonApiHeaders }))
+  .options("/api/*", () => new Response(null, { status: 204, headers: { ...jsonApiHeaders, "Access-Control-Allow-Methods": "GET, POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type" } }))
+  .post("/api/inspect", ({ request }) => agentResponse(request, "inspect"), { parse: "none" })
+  .post("/api/transform", ({ request }) => agentResponse(request, "transform"), { parse: "none" })
+  .all("/mcp", ({ request }) => handleMcp(request), { parse: "none" })
   .get("/api/source", async ({ query, set }) => {
     try {
       const remote = await fetchRemoteImage(query.url);
