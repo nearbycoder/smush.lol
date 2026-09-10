@@ -35,27 +35,29 @@ for (const [page, url] of [["index", "https://smush.lol/"], ["docs", "https://sm
     expect(meta.get("og:title")).toEqual([title]);
     expect(meta.get("twitter:title")).toEqual([title]);
     expect(meta.get("description")?.[0]?.length).toBeGreaterThan(50);
+    expect(meta.get("description")![0]!.length).toBeLessThanOrEqual(125);
     expect(meta.get("og:description")).toEqual(meta.get("description"));
     expect(meta.get("twitter:description")).toEqual(meta.get("description"));
     expect(meta.get("twitter:card")).toEqual(["summary_large_image"]);
-    expect(images.length).toBeGreaterThan(0);
+    expect(images).toHaveLength(1);
     expect(meta.get("twitter:image")).toEqual([images[0]!.url!]);
     expect(meta.get("twitter:image:alt")).toEqual([images[0]!.alt!]);
-    // Catch missing assets and incorrect dimensions, including secondary images.
+    // Social cards must stay within the preview inspector's size and ratio limits.
     for (const image of images) {
       const imageUrl = new URL(image.url!);
       expect(imageUrl.origin).toBe("https://smush.lol");
       expect(imageUrl.pathname).toStartWith("/social/");
       const file = Bun.file(`web${imageUrl.pathname}`);
       expect(await file.exists()).toBe(true);
-      expect(file.size).toBeLessThan(5_000_000);
-      expect(image.type).toBe("image/png");
+      expect(file.size).toBeLessThan(1_000_000);
+      expect(image.type).toBe("image/jpeg");
       expect(image.alt!.length).toBeGreaterThan(20);
       expect(await new Bun.Image(await file.arrayBuffer()).metadata()).toMatchObject({
-        width: Number(image.width), height: Number(image.height), format: "png",
+        width: Number(image.width), height: Number(image.height), format: "jpeg",
       });
     }
-    expect(Number(images[0]!.width)).toBeGreaterThan(Number(images[0]!.height));
+    expect(Number(images[0]!.width)).toBe(1200);
+    expect(Number(images[0]!.height)).toBe(630);
   });
 }
 
@@ -65,8 +67,14 @@ test("app structured data describes the product and all supplied product images"
   expect(app).toMatchObject({
     "@context": "https://schema.org", "@type": "WebApplication",
     name: "smush.lol", url: "https://smush.lol/", description: meta.get("description")![0],
-    image: images[0]!.url, screenshot: images.map((image) => image.url),
+    image: images[0]!.url,
   });
   expect(app.screenshot).toHaveLength(3);
+  for (const screenshot of app.screenshot) {
+    const url = new URL(screenshot);
+    expect(url.origin).toBe("https://smush.lol");
+    expect(url.pathname).toStartWith("/social/");
+    expect(await Bun.file(`web${url.pathname}`).exists()).toBe(true);
+  }
   expect(app.featureList).toContain("Optional browser-only processing");
 });
