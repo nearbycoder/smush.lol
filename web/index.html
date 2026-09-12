@@ -582,11 +582,18 @@
     </footer>
 
     <dialog id="toolbox-dialog" aria-labelledby="toolbox-title">
-      <h2 id="toolbox-title">Image toolbox</h2>
-      <div class="tool-content"><label>Tool <select id="toolbox-kind"></select></label><label>Use <select id="toolbox-source"><option value="source">Original source</option><option value="result">Current export (includes edits)</option></select></label></div>
-      <p id="toolbox-description"></p><div id="toolbox-controls" class="tool-content"></div>
-      <div class="queue-actions"><button type="button" id="toolbox-run" class="creative-action">Run tool</button><button type="button" id="toolbox-cancel" class="small-button">Clear / cancel</button><button type="button" id="toolbox-close" class="small-button">Close</button></div>
-      <p id="toolbox-status" role="status"></p><div id="toolbox-output"></div>
+      <header class="toolbox-header"><div><h2 id="toolbox-title">Image toolbox</h2><p>Adjust your image, then download the result.</p></div><button type="button" id="toolbox-close" class="small-button">Close</button></header>
+      <div class="toolbox-layout">
+        <div class="toolbox-settings">
+          <div class="tool-content"><label>Tool <select id="toolbox-kind"></select></label><label>Use <select id="toolbox-source"><option value="source">Original source</option><option value="result">Current export (includes edits)</option></select></label></div>
+          <p id="toolbox-description"></p><div id="toolbox-controls" class="tool-content"></div>
+          <div class="queue-actions toolbox-actions"><button type="button" id="toolbox-run" class="creative-action">Run tool</button><button type="button" id="toolbox-cancel" class="small-button">Clear / cancel</button></div>
+        </div>
+        <section class="toolbox-preview" aria-label="Tool result">
+          <p id="toolbox-status" role="status"></p><div id="toolbox-output"></div>
+          <div class="toolbox-empty"><span class="toolbox-empty-mark" aria-hidden="true">↗</span><h3>Your preview appears here</h3><p>Choose a tool and run it to see your result here. Your original stays as it is.</p></div>
+        </section>
+      </div>
     </dialog>
     <dialog id="metadata-dialog" aria-labelledby="metadata-title">
       <h2 id="metadata-title">Image metadata</h2>

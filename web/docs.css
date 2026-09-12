@@ -7,17 +7,17 @@
 }
 
 .docs-hero {
-  padding: 70px 0 54px;
+  padding: 28px 0 36px;
   text-align: center;
 }
 
 .docs-kicker {
   display: inline-block;
   padding: 6px 10px;
-  border: 1.5px solid var(--line);
+  border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--lime);
-  box-shadow: 2px 2px 0 var(--line);
+  box-shadow: var(--shadow-small);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.66rem;
   font-weight: 900;
@@ -28,10 +28,10 @@
 .docs-hero h1 {
   margin: 18px 0 0;
   font-family: "Arial Rounded MT Bold", "Trebuchet MS", sans-serif;
-  font-size: clamp(3.5rem, 8vw, 6.5rem);
+  font-size: clamp(2.25rem, 4.2vw, 3.5rem);
   font-weight: 900;
-  letter-spacing: -0.08em;
-  line-height: 0.9;
+  letter-spacing: -0.06em;
+  line-height: 1.08;
 }
 
 .docs-hero > p {
@@ -55,10 +55,10 @@
   padding: 8px 12px 8px 8px;
   align-items: center;
   gap: 9px;
-  border: 1.5px solid var(--line);
+  border: 1px solid var(--border);
   border-radius: 9px;
   background: var(--white);
-  box-shadow: 2px 2px 0 var(--line);
+  box-shadow: var(--shadow-small);
   text-decoration: none;
 }
 
@@ -76,7 +76,7 @@
   min-height: 25px;
   padding: 3px 7px;
   place-items: center;
-  border: 1.5px solid var(--line);
+  border: 1px solid var(--border);
   border-radius: 6px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.61rem;
@@ -97,7 +97,7 @@
   position: sticky;
   top: 24px;
   padding: 18px;
-  border: 1.5px solid var(--line);
+  border: 1px solid var(--border);
   border-radius: 14px;
   background: var(--white);
   box-shadow: var(--shadow-small);
@@ -139,7 +139,7 @@
   padding: 10px;
   align-items: center;
   justify-content: space-between;
-  border: 1.5px solid var(--line);
+  border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--lime-bright);
   font-size: 0.67rem;
@@ -155,7 +155,7 @@
   margin-bottom: 28px;
   padding: 32px;
   scroll-margin-top: 24px;
-  border: 2px solid var(--line);
+  border: 1px solid var(--border);
   border-radius: 18px;
   background: var(--white);
   box-shadow: var(--shadow);
@@ -173,7 +173,7 @@
   width: 32px;
   height: 32px;
   place-items: center;
-  border: 1.5px solid var(--line);
+  border: 1px solid var(--border);
   border-radius: 50%;
   background: var(--peach);
   box-shadow: 1.5px 1.5px 0 var(--line);
@@ -233,7 +233,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  border: 1.5px solid var(--line);
+  border: 1px solid var(--border);
   border-radius: 10px;
   background: #faf7f0;
 }
@@ -251,7 +251,7 @@
 
 .copy-button,
 .code-panel-header button {
-  border: 1.5px solid var(--line);
+  border: 1px solid var(--border);
   border-radius: 6px;
   background: var(--white);
   cursor: pointer;
@@ -272,7 +272,7 @@
 .docs-callout {
   margin-top: 18px;
   padding: 16px 18px;
-  border: 1.5px solid var(--line);
+  border: 1px solid var(--border);
   border-radius: 10px;
   background: #effbd6;
 }
@@ -291,7 +291,7 @@
 .code-panel {
   margin-top: 16px;
   overflow: hidden;
-  border: 1.5px solid var(--line);
+  border: 1px solid var(--border);
   border-radius: 11px;
   background: #201f19;
   box-shadow: 3px 3px 0 #a39d91;
@@ -337,7 +337,7 @@
 
 .docs-table-wrap {
   overflow-x: auto;
-  border: 1.5px solid var(--line);
+  border: 1px solid var(--border);
   border-radius: 10px;
 }
 
@@ -462,8 +462,8 @@
 }
 
 @media (max-width: 650px) {
-  .docs-hero { padding: 44px 0 36px; }
-  .docs-hero h1 { font-size: clamp(3.4rem, 18vw, 4.8rem); }
+  .docs-hero { padding: 28px 0 32px; }
+  .docs-hero h1 { font-size: clamp(2.2rem, 9vw, 3rem); }
   .docs-hero > p { max-width: 92%; font-size: 0.92rem; line-height: 1.55; }
   .docs-layout { gap: 20px; }
   .docs-sidebar { padding: 14px; }
