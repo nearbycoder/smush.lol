@@ -47,7 +47,7 @@ export const capabilities = {
   defaults: parseTransformSettings({}),
   limits: { maxSourceBytes: MAX_FILE_BYTES, maxInlineBytes: MAX_INLINE_BYTES, maxJsonBodyBytes: MAX_AGENT_BODY_BYTES, maxPixels: MAX_PIXELS, maxDimension: MAX_DIMENSION },
   storage: "Images are processed in memory. No saved uploads or persistent result URLs. Remote HTTP processing sends image bytes to this server; local stdio processes on the machine running it.",
-  browserOnlyFeatures: ["AVIF encoding", "crop UI", "background removal", "watermarks", "redaction", "finishing effects", "batch ZIP", "recipes"],
+  browserOnlyFeatures: ["AVIF encoding", "crop UI", "background removal", "watermarks", "redaction", "finishing effects", "batch ZIP", "recipes", "photo corrections", "color replacement and color-key transparency", "creative pixel effects", "straightening", "reflections", "repeating patterns", "drop shadows", "toolbox result chaining"],
   endpoints: { mcp: `${PUBLIC_URL}/mcp`, docs: `${PUBLIC_URL}/docs`, openapi: `${PUBLIC_URL}/openapi.json`, usage: `${PUBLIC_URL}/llms.txt` },
 };
 

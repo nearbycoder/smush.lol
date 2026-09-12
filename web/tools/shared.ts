@@ -1,7 +1,7 @@
 import { decodeSource } from "../local-image";
 import { downloadBlob } from "../archive";
-export interface ToolContext { file: File; files: File[]; other: File | null; signal: AbortSignal; output: HTMLElement; progress: (text: string) => void }
-export interface ImageTool { title: string; description: string; controls: string; run: (context: ToolContext) => Promise<void> }
+export interface ToolContext { file: File; files: File[]; other: File | null; signal: AbortSignal; output: HTMLElement; progress: (text: string) => void; useResult?: (file: File) => void }
+export interface ImageTool { title: string; group?: string; description: string; controls: string; run: (context: ToolContext) => Promise<void> }
 export const value = (id: string) => (document.getElementById(id) as HTMLInputElement).value;
 export function number(id: string, min: number, max: number) { const n = Number(value(id)); if (!Number.isFinite(n) || n < min || n > max) throw new Error(`Choose a value from ${min} to ${max}.`); return n; }
 export async function sourceCanvas(file: File, maxEdge = 4096): Promise<HTMLCanvasElement> {
