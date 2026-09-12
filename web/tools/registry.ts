@@ -7,4 +7,6 @@ import { printTool } from "./print";
 import { histogramTool } from "./histogram";
 import { pickerTool } from "./picker";
 import { paletteTool } from "./palette";
-export const imageTools = { palette: paletteTool, picker: pickerTool, histogram: histogramTool, print: printTool, favicon: faviconTool, social: socialTool, tiles: tilesTool, sprites: spritesTool, difference: differenceTool };
+import { studioTools } from "./studio";
+import type { ImageTool } from "./shared";
+export const imageTools: Record<string, ImageTool> = { palette: paletteTool, picker: pickerTool, histogram: histogramTool, print: printTool, favicon: faviconTool, social: socialTool, tiles: tilesTool, sprites: spritesTool, difference: differenceTool, ...studioTools };

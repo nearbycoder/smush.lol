@@ -1416,6 +1416,13 @@ footer p { margin: 0; color: var(--ink-soft); font-size: 0.7rem; text-align: cen
 #toolbox-dialog input, #toolbox-dialog select { font-size: 16px; min-height: 44px; }
 #toolbox-output { display: grid; gap: 12px; }
 #toolbox-output canvas { max-width: 100%; height: auto; border: 1px solid var(--paper-deep); }
+.studio-comparison { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.studio-comparison figure { margin: 0; min-width: 0; }
+.studio-comparison canvas { display: block; background: repeating-conic-gradient(#e6e2d8 0% 25%, #fffef8 0% 50%) 0 / 16px 16px; }
+.studio-comparison figcaption { padding: 8px 0; font-size: .8rem; overflow-wrap: anywhere; }
+#toolbox-controls input[type=color] { width: 100%; cursor: pointer; }
+@media (min-width: 600px) { #toolbox-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 480px) { .studio-comparison { grid-template-columns: minmax(0, 1fr); } }
 .palette-swatch { display: inline-block; width: 48px; height: 32px; margin-right: 12px; vertical-align: middle; border: 1px solid var(--line); border-radius: 5px; }
 
 .extra-controls { display: grid; gap: 14px; }

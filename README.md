@@ -215,6 +215,39 @@ The settings introduction groups undo/redo with the header, uses larger preset a
 
 Homepage and API docs include static Open Graph and Twitter large-image metadata so link previews work without JavaScript. The homepage also describes the app with WebApplication structured data and three product images. The 1200×630 JPEG social card stays under 1 MB, and preview descriptions stay within 125 characters. Original PNGs remain available as structured-data screenshots. All assets live in `web/social/` and are copied to `public/social/` during every build; keep their public URLs and declared dimensions in sync when replacing them. Use a new filename for updated artwork to avoid stale previews cached by chat apps.
 
+### Photo corrections and creative tools
+
+The **Image toolbox** includes 20 additional tools, grouped alongside the existing inspection and export tools:
+
+| Tool | Controls and result |
+| --- | --- |
+| White balance | Cool/warm temperature and green/magenta tint adjustments in RGB |
+| Gamma correction | Midtone brightness, retaining black and white endpoints |
+| Shadows & highlights | Separate luminance-weighted shadow and highlight adjustments |
+| Black & white levels | Input black/white points and midtone gamma |
+| Vibrance | Saturation adjustment weighted toward muted colors |
+| Hue shift | Color-wheel rotation from −180° to +180° |
+| Replace a color | Source/replacement colors, tolerance, and transition softness |
+| Color-key transparency | Remove matching colors with tolerance and soft alpha edges |
+| Image opacity | Scale existing alpha from 0–100% |
+| Vignette | Smooth centered edge darkening or brightening and clear-center radius |
+| Film grain | Monochrome noise with adjustable strength and a reproducible seed |
+| Pixelate image | Alpha-weighted color blocks, retaining the source alpha silhouette |
+| Posterize | Quantize each RGB channel to 2–32 tonal levels |
+| Black & white threshold | Luminance-based stencil output with preserved alpha |
+| Edge detection | Sobel grayscale edges with adjustable gain |
+| Emboss | Diagonal luminance relief with adjustable strength |
+| Straighten image | Precise −45° to +45° rotation, expanded or original-size canvas |
+| Mirrored reflection | Reflected extension below/right with gap, opacity, and fade |
+| Repeating pattern | 1–8 rows/columns at source resolution, optionally alternating mirrored tiles |
+| Drop shadow | Color, opacity, blur, and signed offsets on an expanded transparent canvas |
+
+Choose the original source or current export, adjust controls, and run the tool to compare before/after and download a PNG. **Use result in next toolbox step** selects the generated image as a temporary source for any toolbox tool. Closing the dialog releases that temporary image; download it first to keep it. The original image and editor settings are unchanged. Toolbox operations are separate from recipes, batch settings, and the server API/MCP.
+
+These tools preserve source resolution and accept at most 12 megapixels / 12,000px per side, including expanded layouts. Oversized output is rejected before canvas allocation; resize in the editor and choose the current export first. They never upload image bytes. Pixel effects run in cancellable workers; changing controls, choosing a different tool/source, clearing, or closing invalidates pending results. Transparent pixels and source alpha are preserved except for explicit transparency tools. PNGs contain the rendered raster; metadata is not copied. White balance is a creative RGB adjustment, and tonal corrections cannot recover clipped image detail. Pixelation is cosmetic: use solid redaction to conceal sensitive information.
+
+Validation covers numerical reference outputs, transparency, layout budgets, and every tool's PNG download. Run `agent-browser --session smush-tools eval --stdin < tests/browser/studio.js` against the built app for browser checks, including chained operations, invalid settings, cancellation of active workers, and zero image API requests. Run at desktop and mobile viewport sizes.
+
 ## API and MCP integrations
 
 The hosted MCP endpoint is `https://smush.lol/mcp` (Streamable HTTP, stateless JSON responses, no authentication). It exposes `get_capabilities`, `inspect_image`, `transform_image`, and `create_image_url`, plus `smush://usage` and `smush://capabilities` resources. Image transformations return actual MCP image content and metadata. Original and resulting images are never stored by the app.
