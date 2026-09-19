@@ -10,8 +10,10 @@ export function mountCustomSelects(root: HTMLElement = document.body) {
     const trigger = document.createElement("button"); trigger.type = "button"; trigger.className = "custom-select-trigger"; trigger.id = `${id}-trigger`;
     trigger.setAttribute("role", "combobox"); trigger.setAttribute("aria-haspopup", "listbox"); trigger.setAttribute("aria-expanded", "false"); trigger.setAttribute("aria-controls", `${id}-options`);
     const text = document.createElement("span"); text.className = "custom-select-value";
-    const arrow = document.createElement("span"); arrow.className = "custom-select-arrow"; arrow.setAttribute("aria-hidden", "true"); arrow.textContent = "⌄";
-    trigger.append(text, arrow);
+    const detail = document.createElement("span"); detail.className = "custom-select-description"; detail.id = `${id}-description`;
+    const copy = document.createElement("span"); copy.className = "custom-select-copy"; copy.append(text, detail);
+    const arrow = document.createElement("span"); arrow.className = "custom-select-arrow"; arrow.setAttribute("aria-hidden", "true");
+    trigger.append(copy, arrow);
     const list = document.createElement("div"); list.className = "custom-select-menu"; list.id = `${id}-options`; list.setAttribute("role", "listbox"); list.setAttribute("popover", "manual"); list.hidden = true;
     select.before(wrapper); wrapper.append(select, trigger, list);
     select.dataset.customSelect = "true"; select.hidden = true; select.tabIndex = -1; select.setAttribute("aria-hidden", "true");
@@ -44,7 +46,9 @@ export function mountCustomSelects(root: HTMLElement = document.body) {
       const below = topEdge + height - rect.bottom - 12, above = rect.top - topEdge - 12;
       const up = below < 180 && above > below;
       const maxHeight = Math.max(44, Math.min(320, up ? above - 6 : below - 6));
-      Object.assign(list.style, { width: `${menuWidth}px`, maxHeight: `${maxHeight}px`, left: `${Math.max(leftEdge + 12, Math.min(rect.left, leftEdge + width - menuWidth - 12))}px`, top: `${up ? Math.max(topEdge + 12, rect.top - Math.min(list.scrollHeight, maxHeight) - 6) : rect.bottom + 6}px` });
+      Object.assign(list.style, { width: `${menuWidth}px`, maxHeight: `${maxHeight}px`, left: `${Math.max(leftEdge + 12, Math.min(rect.left, leftEdge + width - menuWidth - 12))}px` });
+      // Measure after setting the width: descriptions can wrap onto multiple lines.
+      list.style.top = `${up ? Math.max(topEdge + 12, rect.top - list.getBoundingClientRect().height - 6) : rect.bottom + 6}px`;
     }
     function highlight(index: number) {
       active = index;
@@ -60,7 +64,9 @@ export function mountCustomSelects(root: HTMLElement = document.body) {
     }
     function sync() {
       const label = labelText(); trigger.setAttribute("aria-label", label); list.setAttribute("aria-label", label);
-      const description = select.getAttribute("aria-describedby");
+      detail.textContent = select.selectedOptions[0]?.dataset.description ?? "";
+      detail.hidden = !detail.textContent;
+      const description = [select.getAttribute("aria-describedby"), detail.hidden ? "" : detail.id].filter(Boolean).join(" ");
       if (description) trigger.setAttribute("aria-describedby", description); else trigger.removeAttribute("aria-describedby");
       trigger.setAttribute("aria-required", String(select.required));
       trigger.disabled = select.matches(":disabled");
@@ -74,9 +80,15 @@ export function mountCustomSelects(root: HTMLElement = document.body) {
           group = option.parentElement; const heading = document.createElement("div"); heading.className = "custom-select-group"; heading.setAttribute("role", "presentation"); heading.textContent = (group as HTMLOptGroupElement).label; children.push(heading);
         }
         const node = document.createElement("div"); node.className = "custom-select-option"; node.id = `${id}-option-${index}`; node.dataset.index = String(index); node.setAttribute("role", "option"); node.setAttribute("aria-selected", String(option.selected)); node.setAttribute("aria-disabled", String(!allowed(index)));
-        const label = document.createElement("span"); label.textContent = option.label;
+        const label = document.createElement("span"); label.className = "custom-select-option-label"; label.textContent = option.label; label.id = `${id}-label-${index}`;
+        const copy = document.createElement("span"); copy.className = "custom-select-copy"; copy.append(label);
+        node.setAttribute("aria-labelledby", label.id);
+        if (option.dataset.description) {
+          const description = document.createElement("span"); description.className = "custom-select-description"; description.id = `${id}-description-${index}`; description.textContent = option.dataset.description;
+          copy.append(description); node.setAttribute("aria-describedby", description.id);
+        }
         const check = document.createElement("span"); check.className = "custom-select-check"; check.setAttribute("aria-hidden", "true"); check.textContent = option.selected ? "✓" : "";
-        node.append(label, check); children.push(node);
+        node.append(copy, check); children.push(node);
       }
       list.replaceChildren(...children);
       if (!allowed(active)) active = allowed(select.selectedIndex) ? select.selectedIndex : enabledIndices()[0] ?? -1;
@@ -153,7 +165,7 @@ export function mountCustomSelects(root: HTMLElement = document.body) {
     for (const select of changed) controls.get(select)?.sync();
     for (const [select, control] of controls) if (!select.isConnected) { control.close(); controls.delete(select); }
     if (openControl && !openControl.trigger.getClientRects().length) openControl.close();
-  }).observe(root, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ["disabled", "selected", "label", "hidden", "open", "aria-label", "aria-labelledby", "aria-describedby", "required"] });
+  }).observe(root, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ["disabled", "selected", "label", "hidden", "open", "aria-label", "aria-labelledby", "aria-describedby", "required", "data-description"] });
   root.addEventListener("reset", () => queueMicrotask(() => controls.forEach(control => control.sync())));
   root.addEventListener("click", event => {
     const label = (event.target as Element).closest("label");

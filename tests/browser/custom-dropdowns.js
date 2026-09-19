@@ -28,7 +28,16 @@
   key(button, "a"); key(button, "Enter"); assert(select.value === "a", "Typeahead selection failed");
   select.value = "e"; assert(button.textContent.includes("Echo"), "Programmatic value assignment did not sync");
   select.selectedIndex = 2; assert(button.textContent.includes("Charlie"), "Programmatic index assignment did not sync");
+  select.options[2].dataset.description = "A helpful explanation"; await tick();
+  const detail = button.querySelector(".custom-select-description");
+  assert(!detail.hidden && detail.textContent === "A helpful explanation", "Option descriptions must update the selected control");
+  assert(button.getAttribute("aria-describedby").split(" ").includes(detail.id), "Selected explanation must be accessible");
+  button.click();
+  const describedOption = document.querySelector(`#${button.getAttribute("aria-controls")} [data-index="2"]`);
+  assert(document.getElementById(describedOption.getAttribute("aria-describedby")).textContent === detail.textContent, "Menu explanation must be accessible");
+  key(button, "Escape");
   fixture.reset(); await tick(); assert(select.value === "a" && button.textContent.includes("Alpha"), "Form reset did not sync");
+  assert(detail.hidden && !button.hasAttribute("aria-describedby"), "Reset must clear the previous option explanation");
   select.disabled = true; await tick(); assert(button.disabled, "Disabled state did not sync");
   select.disabled = false; select.append(new Option("Foxtrot", "f")); await tick(); choose(select, "f");
   button.click(); document.body.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })); assert(button.getAttribute("aria-expanded") === "false", "Outside click must close menu");
