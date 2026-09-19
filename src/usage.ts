@@ -13,7 +13,7 @@ export const usageGuide = `# smush.lol
 
 ## MCP connection
 
-Connect a Streamable HTTP MCP client to ${PUBLIC_URL}/mcp with no authentication. This is a stateless, JSON-response transport: POST requests only, no session IDs, no legacy SSE endpoint. Standard MCP clients handle initialization and headers automatically. Raw requests must accept both application/json and text/event-stream and send Content-Type: application/json.
+Connect a Streamable HTTP MCP client to ${PUBLIC_URL}/mcp with no authentication. This is a stateless, JSON-response transport: POST requests only, no session IDs, no legacy SSE endpoint. Stateless revision 2026-07-28 supports server/discover and direct tool calls without initialization. Every request includes params._meta with io.modelcontextprotocol/protocolVersion and io.modelcontextprotocol/clientCapabilities. HTTP headers MCP-Protocol-Version and Mcp-Method must match the request; tools/call also requires Mcp-Name matching the tool name. Stable 2025-03-26, 2025-06-18, and 2025-11-25 clients retain their initialize handshake and JSON responses on the same endpoint. SDK clients supply the protocol metadata and headers automatically. Raw requests must accept both application/json and text/event-stream and send Content-Type: application/json. The static tool/resource catalog does not offer subscriptions.
 
 Typical remote client configuration (client-specific configuration may vary):
 
@@ -21,7 +21,7 @@ Typical remote client configuration (client-specific configuration may vary):
 {"mcpServers":{"smush":{"url":"${PUBLIC_URL}/mcp"}}}
 \`\`\`
 
-For local processing, clone https://github.com/nearbycoder/smush.lol, install Bun 1.4 or newer, run bun install --frozen-lockfile, and launch bun run mcp. For a process-spawning client, use command "bun" with args ["run", "/absolute/path/to/smush.lol/src/mcp-stdio.ts"]. Only JSON-RPC is written to stdout. Local stdio handles inline images locally; URL sources are fetched from their public hosts. The hosted MCP endpoint processes images on the smush.lol server.
+For local processing, clone https://github.com/nearbycoder/smush.lol, install Bun 1.4.2 or newer, run bun install --frozen-lockfile, and launch bun run mcp. For a process-spawning client, use command "bun" with args ["run", "/absolute/path/to/smush.lol/src/mcp-stdio.ts"]. Both protocol generations are supported over stdio. Only JSON-RPC is written to stdout. Local stdio handles inline images locally; URL sources are fetched from their public hosts. The hosted MCP endpoint processes images on the smush.lol server.
 
 Tools:
 - get_capabilities: no arguments; returns server formats, options, limits, and documentation URLs.
