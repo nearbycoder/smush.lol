@@ -321,7 +321,7 @@ const result = await response.blob();</code></pre>
           <section id="mcp" class="docs-section">
             <div class="docs-section-heading"><span>09</span><div><h2>Connect an AI assistant</h2><p>Use the same image processing through Model Context Protocol.</p></div></div>
             <div class="base-url-card"><div><small>Streamable HTTP endpoint</small><code>https://smush.lol/mcp</code></div><button class="copy-button" type="button" data-copy-text="https://smush.lol/mcp">Copy</button></div>
-            <p class="docs-copy">Add this URL as a remote MCP server in your client, with no authentication. It uses stateless Streamable HTTP with JSON responses. There is no legacy SSE endpoint, session storage, or persistent result hosting. Client configuration varies; clients accepting <code>mcpServers</code> can use:</p>
+            <p class="docs-copy">Add this URL as a remote MCP server in your client, with no authentication. It uses stateless Streamable HTTP with JSON responses. New clients use MCP <code>2026-07-28</code> with <code>server/discover</code> and per-request metadata. Existing <code>2025-03-26</code>, <code>2025-06-18</code>, and <code>2025-11-25</code> clients keep their usual initialization on the same URL. There are no session IDs, subscriptions, or persistent result hosting. Client configuration varies; clients accepting <code>mcpServers</code> can use:</p>
             <div class="code-panel"><div class="code-panel-header"><span>Remote MCP</span><button type="button" data-copy-target="mcp-config">Copy</button></div><pre id="mcp-config"><code>{
   "mcpServers": {
     "smush": {"url": "https://smush.lol/mcp"}
@@ -339,7 +339,7 @@ const result = await response.blob();</code></pre>
 }</code></pre></div>
             <p class="docs-copy">MCP accepts the same URL or base64 source and typed options as the JSON API. Results contain image bytes in an MCP image content block; save that data to keep the result. Failures return <code>isError: true</code> with a message. Resources <code>smush://usage</code> and <code>smush://capabilities</code> provide in-client guidance.</p>
             <h3>Run locally with stdio</h3>
-            <p class="docs-copy">Clone the repository, install Bun 1.4 or newer, and run <code>bun install --frozen-lockfile</code>. Start with <code>bun run mcp</code>, or configure a process-spawning client with an absolute path:</p>
+            <p class="docs-copy">Clone the repository, install Bun 1.4.2 or newer, and run <code>bun install --frozen-lockfile</code>. Both protocol generations work locally. Start with <code>bun run mcp</code>, or configure a process-spawning client with an absolute path:</p>
             <div class="code-panel"><div class="code-panel-header"><span>Local MCP</span><button type="button" data-copy-target="mcp-local">Copy</button></div><pre id="mcp-local"><code>{
   "mcpServers": {
     "smush": {

@@ -1,5 +1,4 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
+import { createMcpHandler, isLegacyRequest, McpServer, WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import {
   agentError, capabilities, createImageUrl, imageUrlSchema, inspectImage, inspectSchema,
@@ -9,6 +8,7 @@ import { usageGuide } from "./usage";
 
 export function createMcpServer() {
   const server = new McpServer({ name: "smush.lol", version: "1.0.0" }, {
+    capabilities: { tools: { listChanged: false }, resources: { listChanged: false, subscribe: false } },
     instructions: "Inspect, resize, compress, and convert images. Read smush://usage or get_capabilities for limits. Hosted calls process images on this server; no files are stored. AVIF and advanced editor effects are browser-only.",
   });
   const annotations = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true };
@@ -52,6 +52,21 @@ function toolError(error: unknown) {
   return { isError: true, content: [{ type: "text" as const, text: agentError(error).error }] };
 }
 
+// Both protocol eras use the same tools, validation and per-request server factory.
+const handler = createMcpHandler(createMcpServer, { legacy: "reject", maxSubscriptions: 0 });
+
+async function serveMcp(request: Request, body: unknown): Promise<Response> {
+  if (!await isLegacyRequest(request, body)) return handler.fetch(request, { parsedBody: body });
+
+  // Preserve the existing JSON response shape for stable initialize-based clients.
+  const server = createMcpServer();
+  const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
+  try {
+    await server.connect(transport);
+    return await transport.handleRequest(request, { parsedBody: body });
+  } finally { await server.close(); }
+}
+
 export async function handleMcp(request: Request): Promise<Response> {
   const url = new URL(request.url);
   const publicHost = new URL(PUBLIC_URL).hostname;
@@ -63,7 +78,7 @@ export async function handleMcp(request: Request): Promise<Response> {
   if (!hostAllowed || !originAllowed) return fail(403, -32000, "MCP host or Origin is not allowed.");
   if (origin) headers.set("Access-Control-Allow-Origin", origin);
   headers.set("Access-Control-Allow-Methods", "POST, OPTIONS");
-  headers.set("Access-Control-Allow-Headers", "Content-Type, Accept, MCP-Protocol-Version, MCP-Session-Id");
+  headers.set("Access-Control-Allow-Headers", "Content-Type, Accept, MCP-Protocol-Version, MCP-Session-Id, Mcp-Method, Mcp-Name");
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers });
   if (request.method !== "POST") {
     headers.set("Allow", "POST, OPTIONS");
@@ -75,14 +90,11 @@ export async function handleMcp(request: Request): Promise<Response> {
     const result = agentError(error);
     return fail(result.status, result.error.includes("valid JSON") ? -32700 : -32600, result.error);
   }
-  const server = createMcpServer();
-  const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
   try {
-    await server.connect(transport);
-    const response = await transport.handleRequest(request, { parsedBody: body });
+    const response = await serveMcp(request, body);
     headers.forEach((value, key) => response.headers.set(key, value));
     return response;
   } catch {
     return fail(500, -32603, "MCP request could not be processed.");
-  } finally { await server.close(); }
+  }
 }

@@ -254,6 +254,21 @@ Validation covers numerical reference outputs, transparency, layout budgets, and
 
 The hosted MCP endpoint is `https://smush.lol/mcp` (Streamable HTTP, stateless JSON responses, no authentication). It exposes `get_capabilities`, `inspect_image`, `transform_image`, and `create_image_url`, plus `smush://usage` and `smush://capabilities` resources. Image transformations return actual MCP image content and metadata. Original and resulting images are never stored by the app.
 
+The endpoint supports the stateless MCP revision `2026-07-28`: clients can discover the server with `server/discover` or call a tool directly, with protocol version and client capabilities on every request. Stable `2025-03-26`, `2025-06-18`, and `2025-11-25` clients keep their existing `initialize` handshake and JSON responses on the same URL. Neither path creates session IDs. The same tools and resources are available to both generations, including local stdio clients.
+
+Raw stateless discovery example (SDK clients supply these headers and metadata automatically):
+
+```sh
+curl https://smush.lol/mcp \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -H 'MCP-Protocol-Version: 2026-07-28' \
+  -H 'Mcp-Method: server/discover' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"server/discover","params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{}}}}'
+```
+
+For raw `tools/call` requests, also send `Mcp-Name` matching the tool name. There is no separate HTTP+SSE endpoint or subscription stream. The implementation uses the official [TypeScript SDK's stateless serving and legacy routing](https://github.com/modelcontextprotocol/typescript-sdk/blob/main/docs/serving/legacy-clients.md).
+
 For local stdio processing, install dependencies with Bun 1.4.2+ and run `bun run mcp`. A process-spawning client can use `{"command":"bun","args":["run","/absolute/path/to/smush.lol/src/mcp-stdio.ts"]}`. Inline image bytes stay on the machine running that process; URL sources are fetched from their public hosts. The hosted endpoint processes images on the hosted server.
 
 REST integrations can use `POST /api/inspect` and `POST /api/transform` with JSON. Pass `source: {url}` or `source: {base64, filename?}`, and optional typed `options` for transforms. The transform response includes `base64`, `mimeType`, `filename`, dimensions, output bytes, original bytes, format, and quality. Use the existing `/api/image` and `/api/smush` binary endpoints for larger files.
@@ -265,4 +280,4 @@ REST integrations can use `POST /api/inspect` and `POST /api/transform` with JSO
 
 Inline source/output is limited to 4 MiB decoded, and JSON/MCP HTTP bodies to 6 MiB. Remote/multipart sources retain the 15 MiB limit; all processing retains the 48 MP and 12,000px output constraints. JSON/MCP rejects invalid types, unknown fields, malformed base64, and unsupported server formats. Public URL sources use the existing private-network checks and fetch limits. Hosted MCP validates Host/Origin; browser-origin MCP requests must come from the configured public origin or the matching localhost origin. JSON REST endpoints allow cross-origin requests.
 
-For self-hosting, set `SMUSH_PUBLIC_URL` to the public origin (default `https://smush.lol`) to update discovery links, generated transform URLs, and the allowed MCP host/origin. MCP GET/DELETE return 405 because there is no event stream or persistent session. No external services are required. Tests exercise real HTTP and stdio MCP clients, concurrent requests, image output decoding, source validation, and payload limits.
+For self-hosting, set `SMUSH_PUBLIC_URL` to the public origin (default `https://smush.lol`) to update discovery links, generated transform URLs, and the allowed MCP host/origin. MCP GET/DELETE return 405 because there is no event stream or persistent session. No external services are required. Tests exercise real v1 and v2 HTTP/stdio MCP clients, direct calls without initialization, concurrent requests across protocol generations, header/envelope validation, image output decoding, source validation, and payload limits.
