@@ -75,3 +75,16 @@ test("capabilities, OpenAPI and usage are publicly discoverable", async () => {
   for (const alias of ["/llm.txt", "/LLM.txt"]) expect((await app.handle(new Request(`http://localhost${alias}`))).headers.get("location")).toBe("/llms.txt");
   expect((await app.handle(new Request("http://localhost/api/transform", { method: "OPTIONS" }))).status).toBe(204);
 });
+
+test("stalled JSON uploads time out and cancel the request stream", async () => {
+  let cancelled = false;
+  const request = new Request("http://localhost/api/inspect", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: new ReadableStream({
+      start(controller) { controller.enqueue(new TextEncoder().encode('{"source":')); },
+      cancel() { cancelled = true; },
+    }),
+  });
+  await expect(readAgentJson(request, 20)).rejects.toMatchObject({ status: 408 });
+  expect(cancelled).toBe(true);
+});

@@ -106,22 +106,37 @@ export function agentError(error: unknown) {
 }
 
 // Read incrementally so chunked requests cannot bypass Content-Length checks.
-export async function readAgentJson(request: Request): Promise<unknown> {
+export async function readAgentJson(request: Request, timeoutMs = 30_000): Promise<unknown> {
   if (request.headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase() !== "application/json") throw new AgentInputError("Content-Type must be application/json.", 415);
   if (Number(request.headers.get("content-length")) > MAX_AGENT_BODY_BYTES) throw new AgentInputError("JSON requests must be 6 MiB or smaller.", 413);
   const reader = request.body?.getReader();
   if (!reader) throw new AgentInputError("A JSON request body is required.");
   const chunks: Uint8Array[] = [];
   let size = 0;
+  const deadline = new AbortController();
+  const timer = setTimeout(() => deadline.abort(), timeoutMs);
+  const signal = AbortSignal.any([request.signal, deadline.signal]);
+  const cancel = () => { void reader.cancel(signal.reason).catch(() => {}); };
+  signal.addEventListener("abort", cancel, { once: true });
+  if (signal.aborted) cancel();
   try {
     while (true) {
+      signal.throwIfAborted();
       const { value, done } = await reader.read();
+      signal.throwIfAborted();
       if (done) break;
       size += value.byteLength;
       if (size > MAX_AGENT_BODY_BYTES) { await reader.cancel(); throw new AgentInputError("JSON requests must be 6 MiB or smaller.", 413); }
       chunks.push(value);
     }
-  } finally { reader.releaseLock(); }
+  } catch (error) {
+    if (signal.aborted) throw new AgentInputError("The JSON request body timed out or was cancelled.", 408);
+    throw error;
+  } finally {
+    clearTimeout(timer);
+    signal.removeEventListener("abort", cancel);
+    reader.releaseLock();
+  }
   try { return JSON.parse(Buffer.concat(chunks, size).toString("utf8")); }
   catch { throw new AgentInputError("The request body must be valid JSON."); }
 }

@@ -1,4 +1,4 @@
-import { lookup } from "node:dns/promises";
+import * as dns from "node:dns/promises";
 import { BlockList, isIP } from "node:net";
 import { MAX_FILE_BYTES } from "./transform";
 
@@ -6,6 +6,8 @@ const MAX_REDIRECTS = 3;
 const FETCH_TIMEOUT_MS = 10_000;
 
 const blockedAddresses = new BlockList();
+const globalIPv6 = new BlockList();
+globalIPv6.addSubnet("2000::", 3, "ipv6");
 
 for (const [network, prefix] of [
   ["0.0.0.0", 8],
@@ -32,6 +34,9 @@ for (const [network, prefix] of [
   ["::1", 128],
   ["100::", 64],
   ["2001:db8::", 32],
+  ["2001::", 23], // Special-purpose and transition networks, including Teredo.
+  ["2002::", 16], // 6to4 can encode private IPv4 destinations.
+  ["3fff::", 20], // Documentation addresses.
   ["fc00::", 7],
   ["fe80::", 10],
   ["ff00::", 8],
@@ -57,17 +62,18 @@ export function isBlockedAddress(address: string): boolean {
   const family = isIP(address);
   if (family === 4) return blockedAddresses.check(address, "ipv4");
   if (family === 6) {
-    if (address.toLowerCase().startsWith("::ffff:")) return true;
-    return blockedAddresses.check(address, "ipv6");
+    // Reject mapped/compatible IPv4, NAT64 and other non-global ranges,
+    // including alternate textual representations of the same address.
+    return !globalIPv6.check(address, "ipv6") || blockedAddresses.check(address, "ipv6");
   }
   return true;
 }
 
-export async function assertSafeRemoteUrl(value: string | URL): Promise<URL> {
+async function resolveRemoteUrl(value: string | URL, signal?: AbortSignal) {
   let url: URL;
 
   try {
-    url = value instanceof URL ? value : new URL(value);
+    url = new URL(value);
   } catch {
     throw new RemoteImageError("Enter a valid public image URL.", 400);
   }
@@ -100,13 +106,14 @@ export async function assertSafeRemoteUrl(value: string | URL): Promise<URL> {
     if (isBlockedAddress(hostname)) {
       throw new RemoteImageError("Private network image URLs are not allowed.", 403);
     }
-    return url;
+    return { url, addresses: [{ address: hostname, family }] };
   }
 
   let addresses: Array<{ address: string; family: number }>;
   try {
-    addresses = await lookup(hostname, { all: true, verbatim: true });
+    addresses = await abortable(dns.lookup(hostname, { all: true, verbatim: true }), signal);
   } catch {
+    signal?.throwIfAborted();
     throw new RemoteImageError("The image host could not be found.", 502);
   }
 
@@ -114,7 +121,52 @@ export async function assertSafeRemoteUrl(value: string | URL): Promise<URL> {
     throw new RemoteImageError("Private network image URLs are not allowed.", 403);
   }
 
-  return url;
+  return { url, addresses };
+}
+
+export async function assertSafeRemoteUrl(value: string | URL): Promise<URL> {
+  const signal = AbortSignal.timeout(FETCH_TIMEOUT_MS);
+  try { return (await resolveRemoteUrl(value, signal)).url; }
+  catch (error) {
+    if (signal.aborted) throw new RemoteImageError("The image host took too long to respond.", 502);
+    throw error;
+  }
+}
+
+function abortable<T>(operation: Promise<T>, signal?: AbortSignal): Promise<T> {
+  if (!signal) return operation;
+  return new Promise((resolve, reject) => {
+    const abort = () => reject(signal.reason);
+    if (signal.aborted) abort();
+    else signal.addEventListener("abort", abort, { once: true });
+    operation.then(resolve, reject).finally(() => signal.removeEventListener("abort", abort));
+  });
+}
+
+async function fetchResolved(target: Awaited<ReturnType<typeof resolveRemoteUrl>>, signal: AbortSignal) {
+  let lastError: unknown;
+  for (const { address, family } of target.addresses) {
+    signal.throwIfAborted();
+    const connectionUrl = new URL(target.url);
+    connectionUrl.hostname = family === 6 ? `[${address}]` : address;
+    try {
+      const options: BunFetchRequestInit = {
+        headers: {
+          Host: target.url.host,
+          Accept: "image/avif,image/webp,image/png,image/jpeg,image/*;q=0.8",
+          "User-Agent": "smush.lol/1.0 image transformer",
+        },
+        // Dial the checked address while retaining HTTPS identity verification.
+        tls: target.url.protocol === "https:" ? { serverName: normalizedHostname(target.url) } : undefined,
+        // @ts-expect-error Bun 1.4.2 supports false; bun-types has not added it yet.
+        proxy: false,
+        redirect: "manual",
+        signal,
+      };
+      return await fetch(connectionUrl, options);
+    } catch (error) { lastError = error; }
+  }
+  throw lastError;
 }
 
 function filenameFromUrl(url: URL): string {
@@ -160,20 +212,13 @@ async function readLimitedBody(response: Response): Promise<Uint8Array> {
 }
 
 export async function fetchRemoteImage(source: string, timeoutMs = FETCH_TIMEOUT_MS) {
-  let url = await assertSafeRemoteUrl(source);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
+    let target = await resolveRemoteUrl(source, controller.signal);
     for (let redirects = 0; redirects <= MAX_REDIRECTS; redirects += 1) {
-      const response = await fetch(url, {
-        headers: {
-          Accept: "image/avif,image/webp,image/png,image/jpeg,image/*;q=0.8",
-          "User-Agent": "smush.lol/1.0 image transformer",
-        },
-        redirect: "manual",
-        signal: controller.signal,
-      });
+      const response = await fetchResolved(target, controller.signal);
 
       try {
         if (response.status >= 300 && response.status < 400) {
@@ -181,7 +226,7 @@ export async function fetchRemoteImage(source: string, timeoutMs = FETCH_TIMEOUT
           if (!location || redirects === MAX_REDIRECTS) {
             throw new RemoteImageError("The image URL redirected too many times.", 502);
           }
-          url = await assertSafeRemoteUrl(new URL(location, url));
+          target = await resolveRemoteUrl(new URL(location, target.url), controller.signal);
           continue;
         }
         if (!response.ok) {
@@ -197,8 +242,8 @@ export async function fetchRemoteImage(source: string, timeoutMs = FETCH_TIMEOUT
         }
         return {
           bytes: await readLimitedBody(response),
-          filename: filenameFromUrl(url),
-          sourceUrl: url,
+          filename: filenameFromUrl(target.url),
+          sourceUrl: target.url,
         };
       } finally {
         // Release unread bodies on redirects and rejected responses, too.

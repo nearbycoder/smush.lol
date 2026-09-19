@@ -4,6 +4,7 @@ import { agentError, capabilities, inspectImage, inspectSchema, readAgentJson, t
 import { handleMcp } from "./mcp";
 import { openapi } from "./openapi";
 import { usageGuide } from "./usage";
+import { securityHeaders } from "./security";
 import { transformImage } from "./image";
 import { fetchRemoteImage, RemoteImageError } from "./remote-image";
 import {
@@ -115,6 +116,7 @@ export const app = new Elysia({
     maxRequestBodySize: MAX_FILE_BYTES + 1024 * 1024,
   },
 })
+  .onRequest(({ set }) => { Object.assign(set.headers, securityHeaders); })
   .get("/health", () => ({
     ok: true,
     runtime: "bun",

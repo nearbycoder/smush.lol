@@ -134,21 +134,20 @@ export function validateOutputSize(
   settings: TransformSettings,
   source: { width: number; height: number },
 ): void {
-  let width = settings.width ?? source.width;
-  let height = settings.height ?? source.height;
-
-  if (settings.width && !settings.height) {
-    height = Math.round((settings.width / source.width) * source.height);
-  } else if (!settings.width && settings.height) {
-    width = Math.round((settings.height / source.height) * source.width);
-  } else if (settings.width && settings.height && settings.fit === "inside") {
-    const scale = Math.min(settings.width / source.width, settings.height / source.height);
-    width = Math.round(source.width * scale);
-    height = Math.round(source.height * scale);
-  }
-
-  if (settings.rotate === 90 || settings.rotate === 270) {
-    [width, height] = [height, width];
+  // Bun rotates before resizing. Using the original aspect ratio here can
+  // underestimate a thin rotated image by millions of pixels.
+  const rotated = settings.rotate === 90 || settings.rotate === 270;
+  const sourceWidth = rotated ? source.height : source.width;
+  const sourceHeight = rotated ? source.width : source.height;
+  let width = sourceWidth, height = sourceHeight;
+  if (settings.fit === "fill" && settings.width && settings.height) {
+    width = settings.width;
+    height = settings.height;
+  } else if (settings.width || settings.height) {
+    let scale = Math.min(settings.width ? settings.width / sourceWidth : Infinity, settings.height ? settings.height / sourceHeight : Infinity);
+    if (settings.withoutEnlargement) scale = Math.min(1, scale);
+    width = Math.max(1, Math.ceil(sourceWidth * scale));
+    height = Math.max(1, Math.ceil(sourceHeight * scale));
   }
 
   if (width > MAX_DIMENSION || height > MAX_DIMENSION || width * height > MAX_PIXELS) {

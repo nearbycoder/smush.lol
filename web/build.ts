@@ -1,4 +1,7 @@
-import { cp, mkdir } from "node:fs/promises";
+import { cp, mkdir, rm } from "node:fs/promises";
+// Generated assets only: do not keep old bundles or vulnerable codec runtimes
+// reachable after an upgrade. All source assets live under web/.
+await rm("public", { recursive: true, force: true });
 const result = await Bun.build({ entrypoints: ["web/index.html", "web/docs.html", "web/pixel-worker.ts", "web/codec-worker.ts", "web/background-worker.ts"], outdir: "public", target: "browser", define: { SMUSH_BUILD_ID: JSON.stringify(Date.now().toString(36)) }, minify: true, splitting: true });
 if (!result.success) { console.error(result.logs); process.exit(1); }
 // Social crawlers fetch these absolute URLs directly, outside the JS bundle.
