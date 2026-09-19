@@ -21,6 +21,10 @@ export function mountCropEditor(source: () => string | null, notify: (message: s
     };
   }
   function draw() {
+    for (const input of [scale, x, y]) {
+      input.style.setProperty("--range-progress", `${(Number(input.value) - Number(input.min)) / (Number(input.max) - Number(input.min)) * 100}%`);
+      document.getElementById(`${input.id}-value`)!.textContent = `${input.value}%`;
+    }
     document.querySelector<HTMLElement>("#crop-custom")!.hidden = ratio.value !== "custom";
     if (!image) return;
     try {

@@ -49,7 +49,7 @@
     el('collection-open').click(); el('collection-sheet').click();
     await until(() => !el('collection-download').disabled, 'Contact sheet failed');
     assert(!el('collection-preview').hidden, 'Contact sheet preview missing');
-    el('collection-pdf').click(); await until(() => !el('collection-download').disabled, 'PDF failed');
+    document.querySelector('[name=collection-format][value=pdf]').click(); el('collection-pdf').click(); await until(() => !el('collection-download').disabled, 'PDF failed');
     el('collection-download').click();
     assert(new TextDecoder().decode((await downloads.at(-1).bytes).slice(0, 5)) === '%PDF-', 'Invalid PDF download');
     el('collection-close').click();

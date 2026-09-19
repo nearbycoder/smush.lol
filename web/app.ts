@@ -1049,3 +1049,8 @@ document.querySelectorAll<HTMLButtonElement>("[data-duotone]").forEach(button =>
 mountRecipeTransfer(refreshSavedSettings, showToast);
 
 mountCustomSelects();
+
+// Close controls shared by the image editing dialogs.
+document.querySelectorAll<HTMLButtonElement>("[data-close-dialog]").forEach(button => {
+  button.addEventListener("click", () => button.closest("dialog")?.close());
+});

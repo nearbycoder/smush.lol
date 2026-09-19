@@ -1380,7 +1380,7 @@ footer p { margin: 0; color: var(--ink-soft); font-size: 0.7rem; text-align: cen
 
 .tool-content { display: grid; gap: 14px; padding: 18px 0; }
 .tool-content label { display: grid; gap: 6px; font-size: .85rem; }
-.tool-content input:not([type=checkbox]):not([type=color]), .tool-content select { min-width: 0; width: 100%; padding: 8px; border: 1px solid #b9b3a5; border-radius: 6px; background: #fffef8; }
+.tool-content input:not([type=checkbox]):not([type=color]):not([type=range]), .tool-content select { min-width: 0; width: 100%; padding: 8px; border: 1px solid #b9b3a5; border-radius: 6px; background: #fffef8; }
 #region-inputs, .region-inputs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 #redact-dialog {
   --dialog-width: 1050px;
@@ -1391,14 +1391,6 @@ footer p { margin: 0; color: var(--ink-soft); font-size: 0.7rem; text-align: cen
 #collection-dialog {
   --dialog-width: 900px;
 }
-#collection-list { padding-left: 24px; max-height: 240px; overflow: auto; }
-#collection-list li { padding: 5px 0; }
-#collection-list span { display: inline-block; max-width: 55%; overflow-wrap: anywhere; margin-right: 12px; }
-#collection-list button { margin: 3px; }
-.collection-options { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-.collection-options fieldset { min-width: 0; }
-#collection-preview { max-width: 100%; max-height: 55vh; object-fit: contain; margin: 16px auto; }
-@media(max-width: 600px) { .collection-options { grid-template-columns: 1fr; } }
 
 .history-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 12px 0; }
 .history-controls small { color: #636456; font-size: .7rem; }
@@ -1578,7 +1570,7 @@ button.custom-select-trigger[aria-expanded="true"] { border-color: var(--focus);
 .creative-actions .creative-action { width: auto; flex: 1; }
 .creative-section .settings-note, .creative-toggle small, .creative-field, .extra-controls > label:not(.creative-field) { font-size: 12px; }
 .tool-content label { min-width: 0; font-size: 13px; font-weight: 600; }
-.tool-content input:not([type=checkbox]):not([type=color]), .tool-content select,
+.tool-content input:not([type=checkbox]):not([type=color]):not([type=range]), .tool-content select,
 .crop-controls input:not([type=range]), #export-widths, .queue-naming input { min-height: 44px; padding: 10px 12px; border: 1px solid var(--border-strong); border-radius: 9px; background: var(--white); color: var(--ink); font-size: 16px; font-weight: 400; }
 .tool-content input[type=color] { min-height: 44px; padding: 5px; border: 1px solid var(--border-strong); border-radius: 9px; background: var(--white); }
 :where(#crop-dialog, #redact-dialog, #collection-dialog, #metadata-dialog, #toolbox-dialog) {
