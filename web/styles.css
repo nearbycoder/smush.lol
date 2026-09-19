@@ -897,6 +897,11 @@ footer {
 }
 
 .preset-row button:hover { background: var(--selected); border-color: var(--focus); }
+@media (max-width: 360px) {
+  .preset-row { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .preset-row button { grid-column: span 2; }
+  .preset-row button[data-max-width] { grid-column: span 3; }
+}
 .resize-select-fields { display: grid; gap: 18px; margin-top: 18px; }
 .select-label { display: block; min-width: 0; }
 .select-label > .custom-select { margin-top: 7px; }
