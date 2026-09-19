@@ -1613,3 +1613,67 @@ dialog .queue-actions { gap: 8px; }
   .preset-row button { min-height: 44px; }
   .region-inputs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* Everyday exports first; specialist tools are available on demand. */
+.hero { padding: 12px 0 24px; }
+.hero h1 { font-size: clamp(2rem, 3.4vw, 2.75rem); }
+.hero-copy { margin-top: 8px; }
+.drop-zone { min-height: 440px; padding-block: 24px; }
+.drop-visual { height: 130px; margin-bottom: 4px; transform: scale(.8); transform-origin: center; }
+.drop-zone h2 { font-size: 1.65rem; }
+.drop-zone .file-note { margin-top: 12px; font-family: inherit; font-size: 12px; }
+.browse-button { min-height: 46px; margin-top: 16px; padding: 10px 24px; border: 1px solid #99b94f; border-radius: 10px; background: var(--lime); font-weight: 700; cursor: pointer; }
+.browse-button:hover { background: var(--lime-bright); }
+.url-source { width: min(100%, 440px); margin-top: 14px; }
+.url-source > summary { min-height: 44px; padding: 12px; color: var(--ink-soft); font-size: 13px; cursor: pointer; }
+.url-source .url-form { margin-top: 4px; }
+.demo-button { margin-top: 4px; min-height: 44px; }
+.control-header { min-height: 60px; padding-block: 12px 8px; }
+.history-controls { padding-bottom: 12px; }
+.quick-export { padding-block: 14px; }
+.export-presets button { min-height: 64px; padding: 8px 4px; }
+.export-presets .preset-symbol { display: none; }
+.export-presets strong { margin-top: 0; }
+.quick-export .preset-hint { margin-top: 8px; }
+.control-group { padding-bottom: 14px; }
+.control-group legend { margin-bottom: 12px; }
+.size-help { margin: 0 0 10px; color: var(--ink-soft); font-size: 12px; }
+.crop-settings { padding: 10px 20px 14px; }
+.crop-settings .settings-note { margin-bottom: 0; }
+.format-tabs { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.format-tabs label span { padding-inline: 4px; }
+.local-processing-settings { padding-block: 12px; }
+.more-options { border-top: 1px solid var(--border); border-bottom: 0; background: var(--surface); }
+.more-options-content { border-top: 1px solid var(--border); }
+.more-options[open] > summary { border-bottom: 0; }
+.more-options-content > .advanced-options { background: var(--white); }
+.more-options-content .recipe-panel { border-bottom: 0; }
+.more-options.has-changes > summary { background: var(--selected); }
+.changed-settings { display: inline-block; margin-left: 8px; padding: 2px 6px; border-radius: 4px; background: var(--selected); color: #3d5420; font-size: 11px; font-style: normal; font-weight: 600; }
+.queue-entry { align-items: start; }
+.queue-entry > .small-button { min-height: 44px; }
+.image-tools { flex: 1; min-width: 200px; }
+.image-tools > summary { display: list-item; width: fit-content; min-height: 44px; padding: 11px 14px; border: 1px solid var(--border); border-radius: 9px; background: var(--white); font-size: 13px; font-weight: 650; cursor: pointer; }
+.image-tools-content { display: grid; gap: 8px; margin-top: 10px; }
+.image-tools-content .small-button { display: grid; gap: 4px; padding: 12px 14px; text-align: left; }
+.image-tools-content small { color: var(--ink-soft); font-size: 12px; font-weight: 400; }
+@media (max-width: 650px) {
+  .hero { padding-top: 12px; }
+  .hero h1 { font-size: 2rem; }
+  .drop-zone { min-height: 400px; }
+  .format-tabs small { font-size: 10px; }
+  .queue-entry > .small-button { flex: 0 1 auto; }
+  .image-tools { min-width: 160px; }
+}
+.size-options { background: var(--white); }
+.size-options .control-group { padding-top: 14px; border-bottom: 0; }
+.size-options .control-group legend { display: none; }
+.size-options .crop-settings { border-bottom: 0; }
+.format-tabs small { font-family: inherit; font-weight: 400; }
+.output-group { padding-top: 14px; }
+.format-settings { border: 0; background: transparent; padding-inline: 0; padding-bottom: 0; }
+.control-panel { overflow: clip; }
+.export-action { position: sticky; top: 12px; z-index: 2; display: flow-root; background: var(--white); border-bottom: 1px solid var(--border); }
+.export-action .control-hint { margin-bottom: 14px; }
+.export-action + .more-options { border-top: 0; }
+.more-options :where(input, button, summary) { scroll-margin-top: 150px; }

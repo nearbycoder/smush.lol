@@ -6,6 +6,8 @@
   const original = localStorage.getItem("smush.recipes.v1");
   try {
     localStorage.removeItem("smush.recipes.v1"); window.dispatchEvent(new Event("storage"));
+    el("more-options").open = true;
+    el("size-options").open = true;
     assert(!el("recipe-panel").open, "Recipe management should start collapsed");
     el("recipe-panel").open = true; await tick();
     assert(el("recipe-library").hidden && !el("recipe-empty").hidden && el("recipe-export").disabled, "Empty recipe state should hide unavailable actions");
