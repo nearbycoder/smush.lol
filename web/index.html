@@ -293,11 +293,11 @@
               </div>
 
               <div class="preset-row" aria-label="Size presets">
-                <button type="button" data-scale="1">Original</button>
-                <button type="button" data-scale="0.5">50%</button>
-                <button type="button" data-scale="0.25">25%</button>
-                <button type="button" data-max-width="1200">1200w</button>
-                <button type="button" data-max-width="800">800w</button>
+                <button type="button" data-scale="1" title="Keep original dimensions">Original</button>
+                <button type="button" data-scale="0.5" title="Half the original width and height">50%</button>
+                <button type="button" data-scale="0.25" title="Quarter of the original width and height">25%</button>
+                <button type="button" data-max-width="1200" title="Limit width to 1200 pixels">1200 px</button>
+                <button type="button" data-max-width="800" title="Limit width to 800 pixels">800 px</button>
               </div>
 
             </fieldset>
@@ -375,25 +375,25 @@
                 <div class="advanced-content">
                   <section class="advanced-section" aria-labelledby="resize-options-heading">
                     <h3 id="resize-options-heading">Resize options</h3>
-                    <div class="two-col-fields">
+                    <div class="resize-select-fields">
                       <label class="select-label">
                         <span>Fit</span>
                         <select name="fit">
-                          <option value="inside">Fit inside</option>
-                          <option value="fill">Stretch to fill</option>
+                          <option value="inside" data-description="Keep proportions within your target size.">Fit inside</option>
+                          <option value="fill" data-description="Match the target size; proportions may change.">Stretch to fill</option>
                         </select>
                       </label>
                       <label class="select-label">
                         <span>Resampling</span>
                         <select name="filter">
-                          <option value="lanczos3">Lanczos 3</option>
-                          <option value="mitchell">Mitchell</option>
-                          <option value="mks2021">MKS 2021</option>
-                          <option value="nearest">Nearest neighbor</option>
-                          <option value="box">Box</option>
-                          <option value="lanczos2">Lanczos 2</option>
-                          <option value="cubic">Cubic</option>
-                          <option value="bilinear">Bilinear</option>
+                          <option value="lanczos3" data-description="Crisp detail · recommended">Lanczos 3</option>
+                          <option value="mitchell" data-description="Softer edges and smooth transitions">Mitchell</option>
+                          <option value="mks2021" data-description="Magic Kernel Sharp 2021">MKS 2021</option>
+                          <option value="nearest" data-description="Hard edges for pixel art">Nearest neighbor</option>
+                          <option value="box" data-description="Simple pixel averaging">Box</option>
+                          <option value="lanczos2" data-description="A lighter Lanczos filter">Lanczos 2</option>
+                          <option value="cubic" data-description="Smooth cubic interpolation">Cubic</option>
+                          <option value="bilinear" data-description="Fast, softer results">Bilinear</option>
                         </select>
                       </label>
                     </div>
