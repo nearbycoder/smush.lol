@@ -22,7 +22,7 @@ jobs:
       - name: Smoke test the production container
         run: |
           docker run --detach --name smush-ci --publish 127.0.0.1:3000:3000 smush:ci
-          trap 'docker rm --force smush-ci' EXIT
-          curl --fail --retry 10 --retry-connrefused --retry-delay 1 http://127.0.0.1:3000/health
+          trap 'docker logs smush-ci; docker rm --force smush-ci' EXIT
+          curl --fail --retry 10 --retry-all-errors --retry-delay 1 --max-time 5 http://127.0.0.1:3000/health
           curl --fail http://127.0.0.1:3000/ --output /dev/null
           curl --fail --header 'Content-Type: application/json' --data '{"source":{"base64":"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="},"options":{"format":"webp"}}' http://127.0.0.1:3000/api/transform
