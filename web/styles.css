@@ -843,6 +843,10 @@ footer {
   font-variant-numeric: tabular-nums;
 }
 
+.dimension-row input { appearance: textfield; }
+.dimension-row input::-webkit-inner-spin-button,
+.dimension-row input::-webkit-outer-spin-button { appearance: none; margin: 0; }
+
 .number-wrap i {
   position: absolute;
   top: 50%;
