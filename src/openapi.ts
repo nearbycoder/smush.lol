@@ -2,7 +2,7 @@ import { z } from "zod";
 import { capabilities, inspectSchema, optionsSchema, PUBLIC_URL, transformSchema } from "./agent-api";
 
 const error = { description: "Request failed; see the error message.", content: { "application/json": { schema: { type: "object", required: ["error"], properties: { error: { type: "string" } } } } } };
-const failures = Object.fromEntries([400, 403, 413, 415, 422, 502].map((status) => [status, error]));
+const failures = Object.fromEntries([400, 403, 408, 413, 415, 422, 502].map((status) => [status, error]));
 const json = (schema: unknown) => ({ "application/json": { schema } });
 const metadata = {
   type: "object", required: ["filename", "width", "height", "format", "bytes"],
