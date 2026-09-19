@@ -14,7 +14,14 @@ export function mountToolbox(source: (result: boolean) => File | null, files: (r
   }
   select.replaceChildren(...groups.values());
   function clear() { controller.abort(); for (const canvas of Array.from(output.querySelectorAll("canvas"))) canvas.width = canvas.height = 0; output.replaceChildren(); el("toolbox-status").textContent = ""; el<HTMLButtonElement>("toolbox-run").disabled = false; }
-  function choose() { clear(); const tool = imageTools[select.value]!; el("toolbox-description").textContent = tool.description; el("toolbox-controls").innerHTML = tool.controls; }
+  function choose() {
+    clear(); const tool = imageTools[select.value]!;
+    const [summary, ...details] = tool.description.split(/(?<=\.)\s+/);
+    el("toolbox-summary").textContent = summary!;
+    el("toolbox-description").textContent = details.join(" ");
+    const help = dialog.querySelector<HTMLDetailsElement>(".toolbox-help")!; help.hidden = !details.length; help.open = false;
+    el("toolbox-controls").innerHTML = tool.controls;
+  }
   select.onchange = choose;
   el("toolbox-controls").addEventListener("change", clear);
   el("toolbox-controls").addEventListener("input", clear);

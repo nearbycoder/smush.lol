@@ -33,7 +33,7 @@ export function mountMetadata(source: (result: boolean) => File | null) {
         const tr = document.createElement("tr"), label = document.createElement("th"), value = document.createElement("td"); label.scope = "row"; label.textContent = `${row.group} · ${row.name}`; value.textContent = row.value; tr.append(label, value); table.append(tr);
       }
       const hasGps = exported.some(row => /gps/i.test(row.group) || /gps/i.test(row.name));
-      el("metadata-status").textContent = `${exported.length - 2} readable tags${hasGps ? " · Location metadata present" : " · No readable location tags found"}. Camera, orientation, color profiles and GPS appear below when present.`;
+      el("metadata-status").textContent = `${exported.length - 2} readable tags${hasGps ? " · Location metadata present" : " · No readable location tags found"}.`;
       el<HTMLButtonElement>("metadata-download").disabled = false;
     } catch (error) { if (current === version) el("metadata-status").textContent = `Metadata unavailable for this image: ${error instanceof Error ? error.message : "unsupported or malformed metadata"}.`; }
   }

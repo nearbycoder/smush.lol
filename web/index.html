@@ -57,6 +57,7 @@
     </script>
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./workspaces.css" />
     <script type="module" src="./app.ts"></script>
   </head>
   <body>
@@ -603,12 +604,12 @@
       </div>
     </footer>
 
-    <dialog id="toolbox-dialog" aria-labelledby="toolbox-title">
-      <header class="toolbox-header"><div><h2 id="toolbox-title">Image toolbox</h2><p>Adjust your image, then download the result.</p></div><button type="button" id="toolbox-close" class="small-button">Close</button></header>
+    <dialog id="toolbox-dialog" class="workspace-dialog" aria-labelledby="toolbox-title">
+      <header class="toolbox-header dialog-header"><div><h2 id="toolbox-title">Image toolbox</h2><p>Adjust your image, then download the result.</p></div><button type="button" id="toolbox-close" class="dialog-close" aria-label="Close image toolbox">×</button></header>
       <div class="toolbox-layout">
         <div class="toolbox-settings">
-          <div class="tool-content"><label>Tool <select id="toolbox-kind"></select></label><label>Use <select id="toolbox-source"><option value="source">Original source</option><option value="result">Current export (includes edits)</option></select></label></div>
-          <p id="toolbox-description"></p><div id="toolbox-controls" class="tool-content"></div>
+          <div class="tool-content"><label>Tool <select id="toolbox-kind"></select></label><label>Image source <select id="toolbox-source"><option value="source">Original source</option><option value="result">Current export (includes edits)</option></select></label></div>
+          <div class="toolbox-intro"><p id="toolbox-summary"></p><details class="toolbox-help"><summary>How it works</summary><p id="toolbox-description"></p></details></div><div id="toolbox-controls" class="tool-content"></div>
           <div class="queue-actions toolbox-actions"><button type="button" id="toolbox-run" class="creative-action">Run tool</button><button type="button" id="toolbox-cancel" class="small-button">Clear / cancel</button></div>
         </div>
         <section class="toolbox-preview" aria-label="Tool result">
@@ -617,48 +618,85 @@
         </section>
       </div>
     </dialog>
-    <dialog id="metadata-dialog" aria-labelledby="metadata-title">
-      <h2 id="metadata-title">Image metadata</h2>
-      <div class="tool-content"><label>Inspect <select id="metadata-source"><option value="source">Original source</option><option value="result">Current export</option></select></label></div>
-      <p id="metadata-status" aria-live="polite"></p>
-      <p class="settings-note">Read locally. Up to 300 readable tags are shown, including camera, orientation, ICC profile and GPS when present. Binary thumbnails and raw maker data are omitted. Compare the export to see which tags remain.</p>
-      <div class="metadata-scroll"><table><caption class="visually-hidden">Readable image metadata</caption><tbody id="metadata-body"></tbody></table></div>
-      <div class="queue-actions"><button id="metadata-download" type="button" class="small-button" disabled>Download metadata JSON</button><button id="metadata-close" type="button" class="small-button">Close</button></div>
-    </dialog>
-    <dialog id="collection-dialog" aria-labelledby="collection-title">
-      <h2 id="collection-title">Contact sheet &amp; images to PDF</h2>
-      <p>Uses the queue, or the current image when the queue is empty. Everything is generated on this device.</p>
-      <div class="tool-content"><label>Images to include <select id="collection-source"><option value="results">Completed exports (includes edits)</option><option value="sources">Source images (originals, without edits)</option></select></label></div>
-      <p id="collection-status" aria-live="polite"></p><ol id="collection-list"></ol>
-      <div class="collection-options">
-        <fieldset class="tool-content"><legend>Contact sheet</legend><label>Width (px) <input id="sheet-width" type="number" min="400" max="4800" value="1600" /></label><label>Columns <input id="sheet-columns" type="number" min="1" max="6" value="4" /></label><label><input id="sheet-labels" type="checkbox" checked /> Filename labels</label><button type="button" class="small-button" id="collection-sheet">Create contact sheet</button></fieldset>
-        <fieldset class="tool-content"><legend>Multi-page PDF</legend><label>Page size <select id="pdf-paper"><option value="a4">A4</option><option value="letter">US Letter</option><option value="image">Fit image (96 dpi)</option></select></label><label>Margin (points) <input id="pdf-margin" type="number" min="0" max="72" value="24" /></label><label><input id="pdf-landscape" type="checkbox" /> Landscape paper</label><p class="settings-note">One image per page. Images are fitted without cropping, up to 2400px for manageable PDFs.</p><button type="button" class="small-button" id="collection-pdf">Create PDF</button></fieldset>
+    <dialog id="metadata-dialog" class="workspace-dialog" aria-labelledby="metadata-title">
+      <header class="dialog-header"><div><h2 id="metadata-title">Image details</h2><p>Inspect camera data, color profiles, and location tags.</p></div><button id="metadata-close" type="button" class="dialog-close" aria-label="Close image details">×</button></header>
+      <div class="dialog-body">
+        <label class="field-label metadata-source-field">Inspect<select id="metadata-source"><option value="source">Original image</option><option value="result">Current export</option></select></label>
+        <p id="metadata-status" class="inline-empty" aria-live="polite"></p>
+        <div class="metadata-scroll"><table><caption class="visually-hidden">Readable image metadata</caption><thead><tr><th scope="col">Property</th><th scope="col">Value</th></tr></thead><tbody id="metadata-body"></tbody></table></div>
+        <p class="field-help">Read on this device. Up to 300 readable tags are shown. Compare your export with the original to see which details remain.</p>
       </div>
-      <img id="collection-preview" alt="Generated contact sheet preview" hidden />
-      <div class="queue-actions"><button type="button" class="small-button" id="collection-download" disabled>Download file</button><button type="button" class="small-button" id="collection-cancel" hidden>Cancel export</button><button type="button" class="small-button" id="collection-close">Close</button></div>
+      <footer class="dialog-footer"><p>Only readable metadata is included.</p><div class="dialog-actions"><button id="metadata-download" type="button" class="primary-button" disabled>Download JSON</button></div></footer>
     </dialog>
-    <dialog id="redact-dialog" aria-labelledby="redact-title">
-      <h2 id="redact-title">Blur or redact</h2>
-      <p>Drag a rectangle, or enter percentages below. Use solid black to remove sensitive content; blur is a visual effect.</p>
-      <canvas id="redact-canvas" aria-label="Draw a region to obscure"></canvas>
-      <p id="redact-count" aria-live="polite"></p>
-      <div class="tool-content"><label>Effect <select id="redact-mode"><option value="black">Solid black</option><option value="blur">Blur</option></select></label>
-      <div class="region-inputs"><label>Left % <input id="redact-x" type="number" min="0" max="99" value="10" /></label><label>Top % <input id="redact-y" type="number" min="0" max="99" value="10" /></label><label>Width % <input id="redact-w" type="number" min="1" max="100" value="25" /></label><label>Height % <input id="redact-h" type="number" min="1" max="100" value="25" /></label></div></div>
-      <div class="queue-actions"><button type="button" id="redact-add" class="small-button">Add region</button><button type="button" id="redact-undo" class="small-button">Remove last</button><button type="button" id="redact-clear" class="small-button">Clear regions</button><button type="button" id="redact-cancel" class="small-button">Cancel</button><button type="button" id="redact-apply" class="small-button">Apply regions</button></div>
-    </dialog>
-    <dialog id="crop-dialog" aria-labelledby="crop-title">
-      <h2 id="crop-title">Crop image</h2>
-      <p>Drag to position the crop, or use the horizontal and vertical controls.</p>
-      <canvas id="crop-canvas" aria-label="Crop preview"></canvas>
-      <p id="crop-dimensions" aria-live="polite"></p>
-      <div class="crop-controls">
-        <label>Aspect ratio <select id="crop-ratio-choice"><option value="original">Original</option><option value="1">Square (1:1)</option><option value="0.8">Portrait (4:5)</option><option value="1.7777777777777777">Widescreen (16:9)</option><option value="custom">Custom ratio</option></select></label>
-        <div id="crop-custom" hidden><label>Ratio width <input id="crop-custom-width" type="number" min="0.01" max="100" step="any" value="3" /></label><label>Ratio height <input id="crop-custom-height" type="number" min="0.01" max="100" step="any" value="2" /></label></div>
-        <label>Crop area <input id="crop-area" type="range" min="1" max="100" value="100" /></label>
-        <label>Horizontal position <input id="crop-focus-x" type="range" min="0" max="100" value="50" /></label>
-        <label>Vertical position <input id="crop-focus-y" type="range" min="0" max="100" value="50" /></label>
+    <dialog id="collection-dialog" class="workspace-dialog" aria-labelledby="collection-title" aria-describedby="collection-intro">
+      <header class="dialog-header"><div><h2 id="collection-title">Contact sheet &amp; PDF</h2><p id="collection-intro">Bring your images together. Arrange, preview, then export.</p></div><button type="button" class="dialog-close" id="collection-close" aria-label="Close contact sheet and PDF">×</button></header>
+      <div class="collection-workspace">
+        <div class="collection-sidebar">
+          <fieldset class="export-mode"><legend class="field-heading">Create a</legend>
+            <label><input type="radio" name="collection-format" value="sheet" checked /><span><strong>Contact sheet</strong><small>A grid of images</small></span></label>
+            <label><input type="radio" name="collection-format" value="pdf" /><span><strong>Image PDF</strong><small>One image per page</small></span></label>
+          </fieldset>
+          <section class="dialog-section" aria-labelledby="collection-images-heading">
+            <div class="section-title"><h3 id="collection-images-heading">Images</h3><span id="collection-count" class="count-badge">0</span></div>
+            <label class="field-label">Use images from<select id="collection-source"><option value="results">Completed exports</option><option value="sources">Original images</option></select></label>
+            <p class="field-help">Uses your queue, or the current image. Reorder below to change the export order.</p>
+            <ol id="collection-list" aria-label="Images in export order"></ol>
+            <p id="collection-no-images" class="inline-empty">No images here yet. Choose original images, or convert an image first.</p>
+          </section>
+          <section id="sheet-settings" class="dialog-section" aria-labelledby="sheet-settings-title">
+            <h3 id="sheet-settings-title">Sheet layout</h3>
+            <div class="field-grid"><label class="field-label">Width <span class="field-unit"><input id="sheet-width" type="number" min="400" max="4800" value="1600" aria-label="Sheet width in pixels" /><span>px</span></span></label><label class="field-label">Columns<select id="sheet-columns"><option value="1">1 column</option><option value="2">2 columns</option><option value="3">3 columns</option><option value="4" selected>4 columns</option><option value="5">5 columns</option><option value="6">6 columns</option></select></label></div>
+            <label class="option-row"><input id="sheet-labels" type="checkbox" checked /><span><strong>Show filenames</strong><small>Add a label below each image</small></span></label>
+          </section>
+          <section id="pdf-settings" class="dialog-section" aria-labelledby="pdf-settings-title" hidden>
+            <h3 id="pdf-settings-title">Page layout</h3>
+            <label class="field-label">Page size<select id="pdf-paper"><option value="a4">A4</option><option value="letter">US Letter</option><option value="image">Fit image (96 dpi)</option></select></label>
+            <label class="field-label">Page margin<span class="field-unit"><input id="pdf-margin" type="number" min="0" max="72" value="24" /><span>pt</span></span></label>
+            <label class="option-row"><input id="pdf-landscape" type="checkbox" /><span><strong>Landscape pages</strong><small>Use horizontal paper orientation</small></span></label>
+            <p class="field-help">Images fit each page without cropping. Large images are resized to keep your PDF manageable.</p>
+          </section>
+        </div>
+        <section id="collection-stage" class="collection-stage" aria-label="Export preview">
+          <div class="preview-heading"><span>Preview</span><span id="collection-preview-kind">PNG contact sheet</span></div>
+          <div class="collection-preview-surface">
+            <div id="collection-empty" class="workspace-empty"><div class="sheet-placeholder" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div><h3 id="collection-empty-title">Your images, together</h3><p id="collection-empty-copy">Create a contact sheet to preview your layout here.</p></div>
+            <img id="collection-preview" alt="Generated contact sheet preview" hidden />
+          </div>
+          <p id="collection-preview-caption" class="preview-caption">Generated on your device. Your images stay private.</p>
+        </section>
       </div>
-      <div class="queue-actions"><button id="crop-cancel" type="button" class="small-button">Cancel</button><button id="crop-apply" type="button" class="small-button">Apply crop</button></div>
+      <footer class="dialog-footer"><p id="collection-status" role="status" aria-live="polite"></p><div class="dialog-actions"><button type="button" class="small-button" id="collection-cancel" hidden>Cancel export</button><button type="button" class="primary-button" id="collection-sheet">Create contact sheet</button><button type="button" class="primary-button" id="collection-pdf" hidden>Create PDF</button><button type="button" class="primary-button" id="collection-download" disabled hidden>Download PNG</button></div></footer>
+    </dialog>
+    <dialog id="redact-dialog" class="workspace-dialog" aria-labelledby="redact-title">
+      <header class="dialog-header"><div><h2 id="redact-title">Blur or redact</h2><p>Draw a region on the image, or enter its position and size.</p></div><button type="button" class="dialog-close" data-close-dialog aria-label="Close blur and redact">×</button></header>
+      <div class="image-tool-workspace">
+        <section class="image-tool-preview" aria-label="Redaction preview"><canvas id="redact-canvas" aria-label="Draw a region to obscure"></canvas><p id="redact-count" class="preview-caption" aria-live="polite"></p></section>
+        <div class="image-tool-settings">
+          <h3>Region settings</h3>
+          <label class="field-label">Effect<select id="redact-mode"><option value="black" data-description="Hide content with an opaque black rectangle">Solid black</option><option value="blur" data-description="Soften the image within a region">Blur</option></select></label>
+          <p class="field-help">Use solid black to remove sensitive content. Blur is a visual effect.</p>
+          <div class="region-inputs field-grid"><label class="field-label">Left (%)<input id="redact-x" type="number" min="0" max="99" value="10" /></label><label class="field-label">Top (%)<input id="redact-y" type="number" min="0" max="99" value="10" /></label><label class="field-label">Width (%)<input id="redact-w" type="number" min="1" max="100" value="25" /></label><label class="field-label">Height (%)<input id="redact-h" type="number" min="1" max="100" value="25" /></label></div>
+          <button type="button" id="redact-add" class="small-button full-width">Add region</button>
+          <div class="dialog-actions"><button type="button" id="redact-undo" class="small-button">Remove last</button><button type="button" id="redact-clear" class="small-button">Clear all</button></div>
+        </div>
+      </div>
+      <footer class="dialog-footer"><p>Changes apply when you export the image.</p><div class="dialog-actions"><button type="button" id="redact-cancel" class="small-button">Cancel</button><button type="button" id="redact-apply" class="primary-button">Apply regions</button></div></footer>
+    </dialog>
+    <dialog id="crop-dialog" class="workspace-dialog" aria-labelledby="crop-title">
+      <header class="dialog-header"><div><h2 id="crop-title">Crop image</h2><p>Frame the part you want to keep.</p></div><button type="button" class="dialog-close" data-close-dialog aria-label="Close crop editor">×</button></header>
+      <div class="image-tool-workspace">
+        <section class="image-tool-preview" aria-label="Crop preview"><canvas id="crop-canvas" aria-label="Drag to position the crop"></canvas><p id="crop-dimensions" class="preview-caption" aria-live="polite"></p></section>
+        <div class="image-tool-settings crop-controls">
+          <h3>Crop settings</h3>
+          <label class="field-label">Aspect ratio<select id="crop-ratio-choice"><option value="original">Original</option><option value="1">Square (1:1)</option><option value="0.8">Portrait (4:5)</option><option value="1.7777777777777777">Widescreen (16:9)</option><option value="custom">Custom ratio</option></select></label>
+          <div id="crop-custom" class="field-grid" hidden><label class="field-label">Ratio width<input id="crop-custom-width" type="number" min="0.01" max="100" step="any" value="3" /></label><label class="field-label">Ratio height<input id="crop-custom-height" type="number" min="0.01" max="100" step="any" value="2" /></label></div>
+          <label class="field-label"><span class="field-line"><span>Crop area</span><output id="crop-area-value" for="crop-area">100%</output></span><input id="crop-area" type="range" min="1" max="100" value="100" /></label>
+          <label class="field-label"><span class="field-line"><span>Horizontal position</span><output id="crop-focus-x-value" for="crop-focus-x">50%</output></span><input id="crop-focus-x" type="range" min="0" max="100" value="50" /></label>
+          <label class="field-label"><span class="field-line"><span>Vertical position</span><output id="crop-focus-y-value" for="crop-focus-y">50%</output></span><input id="crop-focus-y" type="range" min="0" max="100" value="50" /></label>
+          <p class="field-help">Drag the preview to move the crop, or use these controls for precise positioning.</p>
+        </div>
+      </div>
+      <footer class="dialog-footer"><p>Crop first, then resize and export.</p><div class="dialog-actions"><button id="crop-cancel" type="button" class="small-button">Cancel</button><button id="crop-apply" type="button" class="primary-button">Apply crop</button></div></footer>
     </dialog>
 
     <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
