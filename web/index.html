@@ -72,7 +72,6 @@
       </a>
 
       <div class="header-meta">
-        <span class="runtime-pill"><span class="status-dot"></span>Bun.Image</span>
         <a class="tiny-link" href="/docs">
           API &amp; MCP <span aria-hidden="true">→</span>
         </a>
@@ -111,16 +110,19 @@
               <span class="spark spark-two">✧</span>
               <span class="spark spark-three">＋</span>
             </div>
-            <h2>Choose an image</h2>
-            <p id="drop-help">Drop it here or <button id="browse-button" class="text-link" type="button">choose a file</button></p>
-            <span class="file-note">JPEG, PNG, WebP, GIF, BMP, HEIC, AVIF, TIFF or SVG · up to 15 MB</span>
+            <h2>Drop your images here</h2>
+            <p id="drop-help">Resize one image or convert a whole batch.</p>
+            <button id="browse-button" class="browse-button" type="button">Choose images</button>
+            <span class="file-note">JPEG, PNG, WebP, HEIC, AVIF &amp; more · 15 MB per image</span>
 
-            <div class="source-divider"><span>or use a URL</span></div>
+            <details class="url-source">
+              <summary>Use an image URL</summary>
             <form id="url-form" class="url-form">
               <label class="visually-hidden" for="image-url">Public image URL</label>
               <input id="image-url" type="url" inputmode="url" autocomplete="url" placeholder="https://example.com/image.jpg" required />
               <button id="url-button" type="submit">Load</button>
             </form>
+            </details>
 
             <button id="demo-button" class="demo-button" type="button">
               Use sample image
@@ -199,12 +201,16 @@
           </div>
 
           <div class="queue-entry">
-            <button id="toolbox-open" type="button" class="small-button">Image toolbox</button>
-            <button id="metadata-open" type="button" class="small-button">Inspect metadata</button>
-            <button id="collection-open" type="button" class="small-button">Contact sheet / PDF</button>
-            <button id="queue-add" type="button" class="small-button">Add images to queue</button>
+            <button id="queue-add" type="button" class="small-button">Add more images</button>
             <input id="queue-input" type="file" accept="image/*" multiple hidden />
-            <span>Up to 50 exports · 150 MB total</span>
+            <details class="image-tools">
+              <summary>More image tools</summary>
+              <div class="image-tools-content">
+                <button id="toolbox-open" type="button" class="small-button"><strong>Image toolbox</strong><small>Photo effects, palettes, sprites &amp; more</small></button>
+                <button id="metadata-open" type="button" class="small-button"><strong>Inspect metadata</strong><small>Camera details, location &amp; color profile</small></button>
+                <button id="collection-open" type="button" class="small-button"><strong>Contact sheet / PDF</strong><small>Combine several images in one file</small></button>
+              </div>
+            </details>
           </div>
           <section id="queue-panel" class="queue-panel" aria-labelledby="queue-heading" hidden>
             <h2 id="queue-heading">Conversion queue</h2>
@@ -235,7 +241,7 @@
         <form id="controls" class="control-panel" aria-label="Image controls">
           <div class="control-header">
             <div>
-              <h2>Settings</h2>
+              <h2>Export settings</h2>
             </div>
             <button id="reset-button" class="reset-button settings-action" type="button">Reset</button>
           </div>
@@ -247,7 +253,7 @@
           </div>
           <p id="history-status" class="settings-note" aria-live="polite"></p>
           <section class="quick-export" aria-labelledby="quick-export-heading">
-            <div class="settings-section-heading"><h3 id="quick-export-heading">Quick export</h3><span>Start here</span></div>
+            <div class="settings-section-heading"><h3 id="quick-export-heading">Quick presets</h3><span>Optional</span></div>
             <div class="export-presets">
               <button type="button" data-export-preset="web"><span class="preset-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/></svg></span><strong>Web</strong><small>Smaller files</small></button>
               <button type="button" data-export-preset="email"><span class="preset-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7 8 6 8-6"/></svg></span><strong>Email</strong><small>Easy to share</small></button>
@@ -256,95 +262,67 @@
             <p id="preset-hint" class="preset-hint" aria-live="polite">Choose a preset, then fine-tune below.</p>
           </section>
 
-          <details id="recipe-panel" class="recipe-panel">
-            <summary><span class="recipe-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 4h12v17l-6-4-6 4z"/></svg></span><span class="recipe-summary-copy"><strong>Saved recipes</strong><small id="recipe-summary">Save settings for next time</small></span><span class="recipe-chevron" aria-hidden="true">＋</span></summary>
-            <div class="recipe-content">
-              <p id="recipe-empty" class="recipe-note">Save your current settings to reuse them later.</p>
-              <div id="recipe-library" hidden>
-                <label for="recipe-select">Choose a recipe</label><select id="recipe-select" disabled><option>No saved recipes</option></select>
-                <div class="recipe-actions">
-                  <button id="use-settings" type="button" class="settings-action settings-action-primary" disabled>Use recipe</button>
-                  <button id="forget-settings" type="button" class="settings-action recipe-delete" disabled>Delete</button>
-                </div>
+          <details id="size-options" class="advanced-options size-options">
+            <summary><span>Resize &amp; crop</span><small id="size-options-summary">Original dimensions</small><i aria-hidden="true">＋</i></summary>
+            <fieldset class="control-group">
+              <legend>Image size</legend>
+              <p class="size-help">Leave blank to keep the original size.</p>
+
+              <div class="dimension-row">
+                <label class="input-label">
+                  <span>Width</span>
+                  <span class="number-wrap">
+                    <input id="width-input" name="width" type="number" min="1" max="12000" placeholder="Auto" />
+                    <i>px</i>
+                  </span>
+                </label>
+
+                <button id="lock-ratio" class="ratio-lock active" type="button" aria-pressed="true" aria-label="Keep aspect ratio">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M9 8H7a4 4 0 0 0 0 8h2M15 8h2a4 4 0 1 1 0 8h-2M8 12h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                  </svg>
+                </button>
+
+                <label class="input-label">
+                  <span>Height</span>
+                  <span class="number-wrap">
+                    <input id="height-input" name="height" type="number" min="1" max="12000" placeholder="Auto" />
+                    <i>px</i>
+                  </span>
+                </label>
               </div>
-              <div class="recipe-fields">
-                <label for="recipe-name">Recipe name</label>
-                <div class="recipe-save-row"><input id="recipe-name" type="text" maxlength="48" value="My recipe" placeholder="e.g. Website images" /><button id="save-settings" type="button" class="settings-action settings-action-primary">Save recipe</button></div>
+
+              <div class="preset-row" aria-label="Size presets">
+                <button type="button" data-scale="1">Original</button>
+                <button type="button" data-scale="0.5">50%</button>
+                <button type="button" data-scale="0.25">25%</button>
+                <button type="button" data-max-width="1200">1200w</button>
+                <button type="button" data-max-width="800">800w</button>
               </div>
-              <p class="recipe-note">Up to 20 recipes, stored in this browser. Saving the same name updates it.</p>
-              <div class="recipe-transfer">
-                <div class="recipe-transfer-heading"><strong>Bring your recipes along</strong><small>Transfer settings between devices.</small></div>
-                <div class="recipe-actions"><button id="recipe-import" type="button" class="settings-action">Import file</button><button id="recipe-export" type="button" class="settings-action" disabled>Export all</button></div>
-                <input id="recipe-import-file" type="file" accept="application/json,.json" aria-label="Import recipe JSON" hidden />
-                <p class="recipe-note">JSON files only. Your images are never included.</p>
-              </div>
-            </div>
+
+            </fieldset>
+
+            <section class="crop-settings">
+              <div class="queue-actions"><button id="crop-open" type="button" class="settings-action">Crop image</button><button id="crop-remove" type="button" class="settings-action" disabled>Remove crop</button></div>
+              <p id="crop-summary" class="settings-note">No crop. Cropping happens before resize and rotation.</p>
+              <input type="hidden" name="cropRatio" value="" />
+              <input type="hidden" name="cropScale" value="100" />
+              <input type="hidden" name="cropX" value="50" />
+              <input type="hidden" name="cropY" value="50" />
+            </section>
+
           </details>
 
-          <section class="local-processing-settings" aria-labelledby="local-processing-title">
-            <label class="check-row">
-              <span><strong id="local-processing-title">Browser-only processing</strong><small>Files stay on this device. Applies to the editor and queue.</small></span>
-              <input id="local-only" name="localOnly" type="checkbox" value="true" />
-              <i aria-hidden="true"></i>
-            </label>
-            <p id="local-encoding-note" class="settings-note" hidden>Local encoding uses browser resampling, standard JPEG and PNG compression. Server encoding options are disabled. SVG and AVIF always process locally.</p>
-          </section>
-          <section class="crop-settings">
-            <div class="queue-actions"><button id="crop-open" type="button" class="settings-action">Crop image</button><button id="crop-remove" type="button" class="settings-action" disabled>Remove crop</button></div>
-            <p id="crop-summary" class="settings-note">No crop. Cropping happens before resize and rotation.</p>
-            <input type="hidden" name="cropRatio" value="" />
-            <input type="hidden" name="cropScale" value="100" />
-            <input type="hidden" name="cropX" value="50" />
-            <input type="hidden" name="cropY" value="50" />
-          </section>
-
-          <fieldset class="control-group">
-            <legend><span class="step-number step-lime">1</span>Size</legend>
-
-            <div class="dimension-row">
-              <label class="input-label">
-                <span>Width</span>
-                <span class="number-wrap">
-                  <input id="width-input" name="width" type="number" min="1" max="12000" placeholder="Auto" />
-                  <i>px</i>
-                </span>
-              </label>
-
-              <button id="lock-ratio" class="ratio-lock active" type="button" aria-pressed="true" aria-label="Keep aspect ratio">
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path d="M9 8H7a4 4 0 0 0 0 8h2M15 8h2a4 4 0 1 1 0 8h-2M8 12h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-                </svg>
-              </button>
-
-              <label class="input-label">
-                <span>Height</span>
-                <span class="number-wrap">
-                  <input id="height-input" name="height" type="number" min="1" max="12000" placeholder="Auto" />
-                  <i>px</i>
-                </span>
-              </label>
-            </div>
-
-            <div class="preset-row" aria-label="Size presets">
-              <button type="button" data-scale="1">Original</button>
-              <button type="button" data-scale="0.5">50%</button>
-              <button type="button" data-scale="0.25">25%</button>
-              <button type="button" data-max-width="1200">1200w</button>
-              <button type="button" data-max-width="800">800w</button>
-            </div>
-
-          </fieldset>
-
           <fieldset class="control-group output-group">
-            <legend><span class="step-number step-purple">2</span>Format</legend>
+            <legend>Save as</legend>
 
             <div class="format-tabs">
-              <label><input type="radio" name="format" value="webp" checked /><span>WebP<small>Smaller files</small></span></label>
+              <label><input type="radio" name="format" value="webp" checked /><span>WebP<small>Web</small></span></label>
               <label><input type="radio" name="format" value="jpeg" /><span>JPEG<small>Photos</small></span></label>
-              <label><input type="radio" name="format" value="png" /><span>PNG<small>Transparency</small></span></label>
+              <label><input type="radio" name="format" value="png" /><span>PNG<small>Lossless</small></span></label>
+              <label><input type="radio" name="format" value="avif" /><span>AVIF<small>Compact</small></span></label>
             </div>
 
-            <label class="avif-option"><input type="radio" name="format" value="avif" /> AVIF <small>Local encoder · smaller photos</small></label>
             <div id="quality-settings" class="format-settings">
               <label class="range-control">
                 <span class="range-label"><span>Quality</span><output id="quality-value">82</output></span>
@@ -358,212 +336,256 @@
             <label for="background-color">JPEG background <input id="background-color" name="background" type="color" value="#ffffff" disabled /></label>
           </div>
 
-          <div class="target-size-control">
-            <label class="input-label" for="target-size"><span>Target file size (optional)</span></label>
-            <div class="number-wrap"><input id="target-size" name="targetKB" type="number" min="1" max="15360" step="1" placeholder="e.g. 500" /><i>KB</i></div>
-            <p id="target-hint" class="settings-note">Adjust quality to fit under this limit. Smaller dimensions may be needed.</p>
-          </div>
-
-          <details id="advanced-options" class="advanced-options">
-            <summary>
-              <span>Advanced options</span>
-              <small>Transform, filters, and encoding</small>
-              <i aria-hidden="true">＋</i>
-            </summary>
-
-            <div class="advanced-content">
-              <section class="advanced-section" aria-labelledby="resize-options-heading">
-                <h3 id="resize-options-heading">Resize options</h3>
-                <div class="two-col-fields">
-                  <label class="select-label">
-                    <span>Fit</span>
-                    <select name="fit">
-                      <option value="inside">Fit inside</option>
-                      <option value="fill">Stretch to fill</option>
-                    </select>
-                  </label>
-                  <label class="select-label">
-                    <span>Resampling</span>
-                    <select name="filter">
-                      <option value="lanczos3">Lanczos 3</option>
-                      <option value="mitchell">Mitchell</option>
-                      <option value="mks2021">MKS 2021</option>
-                      <option value="nearest">Nearest neighbor</option>
-                      <option value="box">Box</option>
-                      <option value="lanczos2">Lanczos 2</option>
-                      <option value="cubic">Cubic</option>
-                      <option value="bilinear">Bilinear</option>
-                    </select>
-                  </label>
-                </div>
-
-                <label class="check-row">
-                  <span><strong>Never enlarge</strong><small>Do not upscale smaller images</small></span>
-                  <input name="withoutEnlargement" type="checkbox" checked />
-                  <i aria-hidden="true"></i>
-                </label>
-              </section>
-
-              <section class="advanced-section" aria-labelledby="transform-heading">
-                <h3 id="transform-heading">Transform</h3>
-                <div class="label-line"><span>Rotate</span><small>Clockwise</small></div>
-                <div class="icon-button-row rotation-row" aria-label="Rotation">
-                  <button class="active" type="button" data-rotation="0" aria-label="No rotation">0°</button>
-                  <button type="button" data-rotation="90" aria-label="Rotate 90 degrees">90°</button>
-                  <button type="button" data-rotation="180" aria-label="Rotate 180 degrees">180°</button>
-                  <button type="button" data-rotation="270" aria-label="Rotate 270 degrees">270°</button>
-                  <input id="rotation-input" name="rotate" type="hidden" value="0" />
-                </div>
-
-                <div class="label-line"><span>Flip</span></div>
-                <div class="icon-button-row flip-row">
-                  <button id="flop-button" type="button" aria-pressed="false"><span class="flip-glyph" aria-hidden="true">↔</span> Horizontal</button>
-                  <button id="flip-button" type="button" aria-pressed="false"><span class="flip-glyph" aria-hidden="true">↕</span> Vertical</button>
-                  <input id="flop-input" name="flop" type="hidden" value="false" />
-                  <input id="flip-input" name="flip" type="hidden" value="false" />
-                </div>
-
-                <label class="range-control">
-                  <span class="range-label"><span>Brightness</span><output id="brightness-value">100%</output></span>
-                  <input id="brightness-input" name="brightness" type="range" min="0" max="2" value="1" step="0.05" />
-                </label>
-                <label class="range-control">
-                  <span class="range-label"><span>Saturation</span><output id="saturation-value">100%</output></span>
-                  <input id="saturation-input" name="saturation" type="range" min="0" max="2" value="1" step="0.05" />
-                </label>
-              </section>
-
-              <section class="advanced-section" aria-labelledby="encoding-heading">
-                <h3 id="encoding-heading">Encoding</h3>
-                <label id="lossless-row" class="check-row compact">
-                  <span><strong>Lossless WebP</strong><small>Preserve every pixel</small></span>
-                  <input name="lossless" type="checkbox" />
-                  <i aria-hidden="true"></i>
-                </label>
-                <label id="progressive-row" class="check-row compact" hidden>
-                  <span><strong>Progressive JPEG</strong><small>Display progressively while loading</small></span>
-                  <input name="progressive" type="checkbox" checked />
-                  <i aria-hidden="true"></i>
-                </label>
-
-                <div id="png-settings" hidden>
-                  <label class="range-control">
-                    <span class="range-label"><span>PNG compression</span><output id="compression-value">6</output></span>
-                    <input id="compression-input" name="compressionLevel" type="range" min="0" max="9" value="6" step="1" />
-                  </label>
-                  <label class="check-row compact">
-                    <span><strong>Palette mode</strong><small>Reduce colors for icons and graphics</small></span>
-                    <input id="palette-input" name="palette" type="checkbox" />
-                    <i aria-hidden="true"></i>
-                  </label>
-                  <div id="palette-options" class="palette-options" hidden>
-                    <label class="range-control">
-                      <span class="range-label"><span>Colors</span><output id="colors-value">128</output></span>
-                      <input id="colors-input" name="colors" type="range" min="2" max="256" value="128" step="1" />
-                    </label>
-                    <label class="check-row compact">
-                      <span><strong>Dither colors</strong><small>Smooth color transitions</small></span>
-                      <input name="dither" type="checkbox" checked />
-                      <i aria-hidden="true"></i>
-                    </label>
-                  </div>
-                </div>
-              </section>
-            </div>
-          </details>
-
-          <details class="advanced-options" id="creative-tools">
-            <summary><span>Image editing tools</span><small>Cutouts, redaction &amp; watermarks</small><i aria-hidden="true">＋</i></summary>
-            <div class="creative-content">
-              <section class="creative-section" aria-label="Background removal">
-                <label class="check-row creative-toggle">
-                  <span><strong>Remove background</strong><small>Isolate people or products locally</small></span>
-                  <input name="removeBackground" id="remove-background" type="checkbox" value="true" aria-describedby="background-model-note" />
-                  <i aria-hidden="true"></i>
-                </label>
-                <p class="settings-note" id="background-model-note">First use downloads a 219 MB model from Hugging Face plus its runtime. May take several minutes on a CPU; sources up to 12 megapixels. Choose PNG, WebP or AVIF for transparency.</p>
-              </section>
-              <section class="creative-section" aria-label="Blur and redaction">
-                <button type="button" class="creative-action" id="redact-open">Blur / redact regions</button>
-                <input type="hidden" name="redactions" value="[]" />
-              </section>
-              <fieldset class="creative-section watermark-fields">
-                <legend>Watermark</legend>
-                <label class="creative-field">Watermark text <input name="watermarkText" maxlength="120" placeholder="© Your name" /></label>
-                <label class="creative-field">Or upload a logo <input id="watermark-upload" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="watermark-logo-note" /></label>
-                <input type="hidden" name="watermarkLogo" value="" />
-                <div class="logo-status">
-                  <p class="settings-note" id="watermark-logo-note" aria-live="polite">No logo. Text is used when no logo is selected.</p>
-                  <button type="button" class="small-button" id="watermark-remove">Remove logo</button>
-                </div>
-                <label class="creative-field">Placement <select name="watermarkPosition"><option value="bottom-right">Bottom right</option><option value="bottom-left">Bottom left</option><option value="top-right">Top right</option><option value="top-left">Top left</option><option value="center">Center</option></select></label>
-                <div class="watermark-measures">
-                  <label class="creative-field">Opacity (%) <input name="watermarkOpacity" type="number" min="1" max="100" value="70" inputmode="numeric" /></label>
-                  <label class="creative-field">Width (% of image) <input name="watermarkSize" type="number" min="2" max="80" value="20" inputmode="numeric" /></label>
-                </div>
-                <label class="creative-field creative-color">Text color <input name="watermarkColor" type="color" value="#ffffff" /></label>
-                <p class="settings-note">Edits process locally and apply to batch exports. Convert to preview the finished image.</p>
-              </fieldset>
-            </div>
-          </details>
-
-          <details id="finishing-tools" class="advanced-options">
-            <summary><span>Image finishing</span><small>Color, borders &amp; corners</small><i aria-hidden="true">＋</i></summary>
-            <div class="creative-content">
-              <section class="creative-section extra-controls" aria-labelledby="color-title">
-                <h3 id="color-title">Color adjustments</h3>
-                <label><input name="trimTransparent" type="checkbox" value="true" /> Trim transparent edges</label>
-                <label class="creative-field">Ignore alpha at or below (0–254) <input name="trimThreshold" type="number" min="0" max="254" value="0" /></label>
-                <label class="creative-field">Retain edge margin (source px) <input name="trimPadding" type="number" min="0" max="512" value="0" /></label>
-                <p class="settings-note">Finds visible pixels after your crop, before resizing. Margin stays within the source. Uses a cancellable local scan, up to 12 megapixels; entirely transparent images report an error.</p>
-                <label><input name="pixelArt" type="checkbox" value="true" /> Pixel-art resizing (nearest neighbor)</label>
-                <div class="creative-actions" role="group" aria-label="Pixel art scale"><button type="button" class="creative-action" data-pixel-scale="2">2× pixels</button><button type="button" class="creative-action" data-pixel-scale="4">4× pixels</button><button type="button" class="creative-action" data-pixel-scale="8">8× pixels</button></div>
-                <p class="settings-note">Keeps hard pixel edges. Scale buttons use the current source and crop, allow enlargement, and select PNG. Custom dimensions also work; whole-number enlargement preserves an even pixel grid.</p>
-                <label class="creative-field">Exposure (stops) <input name="exposure" type="number" min="-3" max="3" step="0.1" value="0" /></label>
-                <label class="creative-field">Contrast (%) <input name="contrast" type="number" min="0" max="200" value="100" /></label>
-                <p class="settings-note">Exposure 0 and contrast 100% leave tones unchanged. Each exposure stop doubles or halves RGB intensity, then contrast adjusts around mid-gray. Strong settings can clip highlights or shadows.</p>
-                <label class="creative-field">Sharpen (%) <input name="sharpen" type="number" min="0" max="200" value="0" /></label>
-                <p class="settings-note">Enhance edges after resizing and color adjustments. Start around 25–50%; zero disables it. Transparent neighbors do not create dark halos. Output must be under 12 megapixels.</p>
-                <label class="creative-field">Color filter <select name="colorFilter"><option value="none">Original colors</option><option value="grayscale">Grayscale</option><option value="sepia">Sepia</option><option value="invert">Invert</option></select></label>
-                <label class="creative-field">Filter strength (%) <input name="filterAmount" type="number" min="0" max="100" value="100" /></label>
-                <label><input name="duotone" type="checkbox" value="true" /> Duotone color mapping</label>
-                <label class="creative-field creative-color">Shadow color <input name="duotoneDark" type="color" value="#192b40" /></label>
-                <label class="creative-field creative-color">Highlight color <input name="duotoneLight" type="color" value="#ffdb8c" /></label>
-                <label class="creative-field">Duotone strength (%) <input name="duotoneAmount" type="number" min="0" max="100" value="100" /></label>
-                <div class="creative-actions" role="group" aria-label="Duotone palettes"><button class="creative-action" type="button" data-duotone="#192b40,#ffdb8c">Navy &amp; gold</button><button class="creative-action" type="button" data-duotone="#39245c,#f2d9ff">Plum &amp; lilac</button><button class="creative-action" type="button" data-duotone="#064b45,#dbffd2">Forest &amp; mint</button></div>
-                <p class="settings-note">Maps darker and lighter pixels between your two colors, after exposure and filters. Transparency is preserved. Mix with the original using strength; presets enable duotone at full strength.</p>
-                <p class="settings-note">Applies before redaction, watermarks and borders. Set strength to zero to keep the original colors. Adjustments run locally in a cancellable worker.</p>
-              </section>
-              <section class="creative-section extra-controls" aria-labelledby="border-title">
-                <label class="creative-field">Corner radius (% of shorter side) <input name="cornerRadius" type="number" min="0" max="50" value="0" /></label>
-                <p class="settings-note">Round the outside edge after adding padding. Use 50% on a square for a circle. PNG, WebP and AVIF keep corners transparent; JPEG uses your background color.</p>
-                <h3 id="border-title">Border &amp; padding</h3>
-                <label class="creative-field">Border width (px per side) <input name="borderSize" type="number" min="0" max="1024" value="0" /></label>
-                <label class="creative-field creative-color">Border color <input name="borderColor" type="color" value="#ffffff" /></label>
-                <label><input name="borderTransparent" type="checkbox" value="true" /> Transparent padding</label>
-                <p class="settings-note">Adds space around the finished image without cropping. Zero disables the border. PNG, WebP and AVIF preserve transparent padding; JPEG fills it with your background color. Applies locally to editor and queue.</p>
-              </section>
-            </div>
-          </details>
-
-          <details id="multiple-exports" class="advanced-options">
-            <summary><span>Export several sizes</span><small>Thumbnails, medium, and full size</small><i aria-hidden="true">＋</i></summary>
-            <div class="multi-export-content">
-              <label for="export-widths">Maximum widths in pixels, separated by commas</label>
-              <input id="export-widths" type="text" value="320, 800, 1600" maxlength="100" />
-              <label><input id="export-original" type="checkbox" checked /> Include original size</label>
-              <fieldset><legend>Formats</legend><label><input type="checkbox" data-export-format="webp" checked /> WebP</label><label><input type="checkbox" data-export-format="jpeg" /> JPEG</label><label><input type="checkbox" data-export-format="png" /> PNG</label><label><input type="checkbox" data-export-format="avif" /> AVIF</label></fieldset>
-              <p class="settings-note">Uses the selected source and current edits. Widths keep the image ratio. Target size applies only to JPEG and lossy WebP.</p>
-              <button id="queue-exports" type="button" class="small-button">Queue these exports</button>
-            </div>
-          </details>
-
+          <section class="local-processing-settings" aria-labelledby="local-processing-title">
+            <label class="check-row">
+              <span><strong id="local-processing-title">Browser-only processing</strong><small>Files stay on this device. Applies to the editor and queue.</small></span>
+              <input id="local-only" name="localOnly" type="checkbox" value="true" />
+              <i aria-hidden="true"></i>
+            </label>
+            <p id="local-encoding-note" class="settings-note" hidden>Local encoding uses browser resampling, standard JPEG and PNG compression. Server encoding options are disabled. SVG and AVIF always process locally.</p>
+          </section>
+          <div class="export-action">
           <p id="operation-progress" class="settings-note" aria-live="polite"></p><button type="button" id="operation-cancel" class="small-button" hidden>Cancel conversion</button>
           <button id="smush-button" class="smush-button" type="submit" disabled>
             <span class="button-copy"><strong>Convert image</strong></span>
             <span class="button-arrow" aria-hidden="true">→</span>
           </button>
           <p id="control-hint" class="control-hint">Choose an image to continue.</p>
+          </div>
+          <details id="more-options" class="advanced-options more-options">
+            <summary><span>More options</span><small id="more-options-summary">File size, effects, recipes &amp; batch exports</small><i aria-hidden="true">＋</i></summary>
+            <div class="more-options-content">
+              <details id="file-size-options" class="advanced-options" data-settings-group>
+                <summary><span>Limit file size</span><small>Fit an upload or attachment limit</small><i aria-hidden="true">＋</i></summary>
+              <div class="target-size-control">
+                <label class="input-label" for="target-size"><span>Target file size (optional)</span></label>
+                <div class="number-wrap"><input id="target-size" name="targetKB" type="number" min="1" max="15360" step="1" placeholder="e.g. 500" /><i>KB</i></div>
+                <p id="target-hint" class="settings-note">Adjust quality to fit under this limit. Smaller dimensions may be needed.</p>
+              </div>
+
+              </details>
+
+              <details id="advanced-options" class="advanced-options" data-settings-group>
+                <summary>
+                  <span>Transform &amp; encoding</span>
+                  <small>Rotate, flip, resampling &amp; compression</small>
+                  <i aria-hidden="true">＋</i>
+                </summary>
+
+                <div class="advanced-content">
+                  <section class="advanced-section" aria-labelledby="resize-options-heading">
+                    <h3 id="resize-options-heading">Resize options</h3>
+                    <div class="two-col-fields">
+                      <label class="select-label">
+                        <span>Fit</span>
+                        <select name="fit">
+                          <option value="inside">Fit inside</option>
+                          <option value="fill">Stretch to fill</option>
+                        </select>
+                      </label>
+                      <label class="select-label">
+                        <span>Resampling</span>
+                        <select name="filter">
+                          <option value="lanczos3">Lanczos 3</option>
+                          <option value="mitchell">Mitchell</option>
+                          <option value="mks2021">MKS 2021</option>
+                          <option value="nearest">Nearest neighbor</option>
+                          <option value="box">Box</option>
+                          <option value="lanczos2">Lanczos 2</option>
+                          <option value="cubic">Cubic</option>
+                          <option value="bilinear">Bilinear</option>
+                        </select>
+                      </label>
+                    </div>
+
+                    <label class="check-row">
+                      <span><strong>Never enlarge</strong><small>Do not upscale smaller images</small></span>
+                      <input name="withoutEnlargement" type="checkbox" checked />
+                      <i aria-hidden="true"></i>
+                    </label>
+                  </section>
+
+                  <section class="advanced-section" aria-labelledby="transform-heading">
+                    <h3 id="transform-heading">Transform</h3>
+                    <div class="label-line"><span>Rotate</span><small>Clockwise</small></div>
+                    <div class="icon-button-row rotation-row" aria-label="Rotation">
+                      <button class="active" type="button" data-rotation="0" aria-label="No rotation">0°</button>
+                      <button type="button" data-rotation="90" aria-label="Rotate 90 degrees">90°</button>
+                      <button type="button" data-rotation="180" aria-label="Rotate 180 degrees">180°</button>
+                      <button type="button" data-rotation="270" aria-label="Rotate 270 degrees">270°</button>
+                      <input id="rotation-input" name="rotate" type="hidden" value="0" />
+                    </div>
+
+                    <div class="label-line"><span>Flip</span></div>
+                    <div class="icon-button-row flip-row">
+                      <button id="flop-button" type="button" aria-pressed="false"><span class="flip-glyph" aria-hidden="true">↔</span> Horizontal</button>
+                      <button id="flip-button" type="button" aria-pressed="false"><span class="flip-glyph" aria-hidden="true">↕</span> Vertical</button>
+                      <input id="flop-input" name="flop" type="hidden" value="false" />
+                      <input id="flip-input" name="flip" type="hidden" value="false" />
+                    </div>
+
+                    <label class="range-control">
+                      <span class="range-label"><span>Brightness</span><output id="brightness-value">100%</output></span>
+                      <input id="brightness-input" name="brightness" type="range" min="0" max="2" value="1" step="0.05" />
+                    </label>
+                    <label class="range-control">
+                      <span class="range-label"><span>Saturation</span><output id="saturation-value">100%</output></span>
+                      <input id="saturation-input" name="saturation" type="range" min="0" max="2" value="1" step="0.05" />
+                    </label>
+                  </section>
+
+                  <section class="advanced-section" aria-labelledby="encoding-heading">
+                    <h3 id="encoding-heading">Encoding</h3>
+                    <label id="lossless-row" class="check-row compact">
+                      <span><strong>Lossless WebP</strong><small>Preserve every pixel</small></span>
+                      <input name="lossless" type="checkbox" />
+                      <i aria-hidden="true"></i>
+                    </label>
+                    <label id="progressive-row" class="check-row compact" hidden>
+                      <span><strong>Progressive JPEG</strong><small>Display progressively while loading</small></span>
+                      <input name="progressive" type="checkbox" checked />
+                      <i aria-hidden="true"></i>
+                    </label>
+
+                    <div id="png-settings" hidden>
+                      <label class="range-control">
+                        <span class="range-label"><span>PNG compression</span><output id="compression-value">6</output></span>
+                        <input id="compression-input" name="compressionLevel" type="range" min="0" max="9" value="6" step="1" />
+                      </label>
+                      <label class="check-row compact">
+                        <span><strong>Palette mode</strong><small>Reduce colors for icons and graphics</small></span>
+                        <input id="palette-input" name="palette" type="checkbox" />
+                        <i aria-hidden="true"></i>
+                      </label>
+                      <div id="palette-options" class="palette-options" hidden>
+                        <label class="range-control">
+                          <span class="range-label"><span>Colors</span><output id="colors-value">128</output></span>
+                          <input id="colors-input" name="colors" type="range" min="2" max="256" value="128" step="1" />
+                        </label>
+                        <label class="check-row compact">
+                          <span><strong>Dither colors</strong><small>Smooth color transitions</small></span>
+                          <input name="dither" type="checkbox" checked />
+                          <i aria-hidden="true"></i>
+                        </label>
+                      </div>
+                    </div>
+                  </section>
+                </div>
+              </details>
+
+              <details class="advanced-options" id="creative-tools" data-settings-group>
+                <summary><span>Image editing tools</span><small>Cutouts, redaction &amp; watermarks</small><i aria-hidden="true">＋</i></summary>
+                <div class="creative-content">
+                  <section class="creative-section" aria-label="Background removal">
+                    <label class="check-row creative-toggle">
+                      <span><strong>Remove background</strong><small>Isolate people or products locally</small></span>
+                      <input name="removeBackground" id="remove-background" type="checkbox" value="true" aria-describedby="background-model-note" />
+                      <i aria-hidden="true"></i>
+                    </label>
+                    <p class="settings-note" id="background-model-note">First use downloads a 219 MB model from Hugging Face plus its runtime. May take several minutes on a CPU; sources up to 12 megapixels. Choose PNG, WebP or AVIF for transparency.</p>
+                  </section>
+                  <section class="creative-section" aria-label="Blur and redaction">
+                    <button type="button" class="creative-action" id="redact-open">Blur / redact regions</button>
+                    <input type="hidden" name="redactions" value="[]" />
+                  </section>
+                  <fieldset class="creative-section watermark-fields">
+                    <legend>Watermark</legend>
+                    <label class="creative-field">Watermark text <input name="watermarkText" maxlength="120" placeholder="© Your name" /></label>
+                    <label class="creative-field">Or upload a logo <input id="watermark-upload" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="watermark-logo-note" /></label>
+                    <input type="hidden" name="watermarkLogo" value="" />
+                    <div class="logo-status">
+                      <p class="settings-note" id="watermark-logo-note" aria-live="polite">No logo. Text is used when no logo is selected.</p>
+                      <button type="button" class="small-button" id="watermark-remove">Remove logo</button>
+                    </div>
+                    <label class="creative-field">Placement <select name="watermarkPosition"><option value="bottom-right">Bottom right</option><option value="bottom-left">Bottom left</option><option value="top-right">Top right</option><option value="top-left">Top left</option><option value="center">Center</option></select></label>
+                    <div class="watermark-measures">
+                      <label class="creative-field">Opacity (%) <input name="watermarkOpacity" type="number" min="1" max="100" value="70" inputmode="numeric" /></label>
+                      <label class="creative-field">Width (% of image) <input name="watermarkSize" type="number" min="2" max="80" value="20" inputmode="numeric" /></label>
+                    </div>
+                    <label class="creative-field creative-color">Text color <input name="watermarkColor" type="color" value="#ffffff" /></label>
+                    <p class="settings-note">Edits process locally and apply to batch exports. Convert to preview the finished image.</p>
+                  </fieldset>
+                </div>
+              </details>
+
+              <details id="finishing-tools" class="advanced-options" data-settings-group>
+                <summary><span>Image finishing</span><small>Color, borders &amp; corners</small><i aria-hidden="true">＋</i></summary>
+                <div class="creative-content">
+                  <section class="creative-section extra-controls" aria-labelledby="color-title">
+                    <h3 id="color-title">Color adjustments</h3>
+                    <label><input name="trimTransparent" type="checkbox" value="true" /> Trim transparent edges</label>
+                    <label class="creative-field">Ignore alpha at or below (0–254) <input name="trimThreshold" type="number" min="0" max="254" value="0" /></label>
+                    <label class="creative-field">Retain edge margin (source px) <input name="trimPadding" type="number" min="0" max="512" value="0" /></label>
+                    <p class="settings-note">Finds visible pixels after your crop, before resizing. Margin stays within the source. Uses a cancellable local scan, up to 12 megapixels; entirely transparent images report an error.</p>
+                    <label><input name="pixelArt" type="checkbox" value="true" /> Pixel-art resizing (nearest neighbor)</label>
+                    <div class="creative-actions" role="group" aria-label="Pixel art scale"><button type="button" class="creative-action" data-pixel-scale="2">2× pixels</button><button type="button" class="creative-action" data-pixel-scale="4">4× pixels</button><button type="button" class="creative-action" data-pixel-scale="8">8× pixels</button></div>
+                    <p class="settings-note">Keeps hard pixel edges. Scale buttons use the current source and crop, allow enlargement, and select PNG. Custom dimensions also work; whole-number enlargement preserves an even pixel grid.</p>
+                    <label class="creative-field">Exposure (stops) <input name="exposure" type="number" min="-3" max="3" step="0.1" value="0" /></label>
+                    <label class="creative-field">Contrast (%) <input name="contrast" type="number" min="0" max="200" value="100" /></label>
+                    <p class="settings-note">Exposure 0 and contrast 100% leave tones unchanged. Each exposure stop doubles or halves RGB intensity, then contrast adjusts around mid-gray. Strong settings can clip highlights or shadows.</p>
+                    <label class="creative-field">Sharpen (%) <input name="sharpen" type="number" min="0" max="200" value="0" /></label>
+                    <p class="settings-note">Enhance edges after resizing and color adjustments. Start around 25–50%; zero disables it. Transparent neighbors do not create dark halos. Output must be under 12 megapixels.</p>
+                    <label class="creative-field">Color filter <select name="colorFilter"><option value="none">Original colors</option><option value="grayscale">Grayscale</option><option value="sepia">Sepia</option><option value="invert">Invert</option></select></label>
+                    <label class="creative-field">Filter strength (%) <input name="filterAmount" type="number" min="0" max="100" value="100" /></label>
+                    <label><input name="duotone" type="checkbox" value="true" /> Duotone color mapping</label>
+                    <label class="creative-field creative-color">Shadow color <input name="duotoneDark" type="color" value="#192b40" /></label>
+                    <label class="creative-field creative-color">Highlight color <input name="duotoneLight" type="color" value="#ffdb8c" /></label>
+                    <label class="creative-field">Duotone strength (%) <input name="duotoneAmount" type="number" min="0" max="100" value="100" /></label>
+                    <div class="creative-actions" role="group" aria-label="Duotone palettes"><button class="creative-action" type="button" data-duotone="#192b40,#ffdb8c">Navy &amp; gold</button><button class="creative-action" type="button" data-duotone="#39245c,#f2d9ff">Plum &amp; lilac</button><button class="creative-action" type="button" data-duotone="#064b45,#dbffd2">Forest &amp; mint</button></div>
+                    <p class="settings-note">Maps darker and lighter pixels between your two colors, after exposure and filters. Transparency is preserved. Mix with the original using strength; presets enable duotone at full strength.</p>
+                    <p class="settings-note">Applies before redaction, watermarks and borders. Set strength to zero to keep the original colors. Adjustments run locally in a cancellable worker.</p>
+                  </section>
+                  <section class="creative-section extra-controls" aria-labelledby="border-title">
+                    <label class="creative-field">Corner radius (% of shorter side) <input name="cornerRadius" type="number" min="0" max="50" value="0" /></label>
+                    <p class="settings-note">Round the outside edge after adding padding. Use 50% on a square for a circle. PNG, WebP and AVIF keep corners transparent; JPEG uses your background color.</p>
+                    <h3 id="border-title">Border &amp; padding</h3>
+                    <label class="creative-field">Border width (px per side) <input name="borderSize" type="number" min="0" max="1024" value="0" /></label>
+                    <label class="creative-field creative-color">Border color <input name="borderColor" type="color" value="#ffffff" /></label>
+                    <label><input name="borderTransparent" type="checkbox" value="true" /> Transparent padding</label>
+                    <p class="settings-note">Adds space around the finished image without cropping. Zero disables the border. PNG, WebP and AVIF preserve transparent padding; JPEG fills it with your background color. Applies locally to editor and queue.</p>
+                  </section>
+                </div>
+              </details>
+
+              <details id="multiple-exports" class="advanced-options">
+                <summary><span>Export several sizes</span><small>Thumbnails, medium, and full size</small><i aria-hidden="true">＋</i></summary>
+                <div class="multi-export-content">
+                  <label for="export-widths">Maximum widths in pixels, separated by commas</label>
+                  <input id="export-widths" type="text" value="320, 800, 1600" maxlength="100" />
+                  <label><input id="export-original" type="checkbox" checked /> Include original size</label>
+                  <fieldset><legend>Formats</legend><label><input type="checkbox" data-export-format="webp" checked /> WebP</label><label><input type="checkbox" data-export-format="jpeg" /> JPEG</label><label><input type="checkbox" data-export-format="png" /> PNG</label><label><input type="checkbox" data-export-format="avif" /> AVIF</label></fieldset>
+                  <p class="settings-note">Uses the selected source and current edits. Widths keep the image ratio. Target size applies only to JPEG and lossy WebP.</p>
+                  <button id="queue-exports" type="button" class="small-button">Queue these exports</button>
+                </div>
+              </details>
+
+              <details id="recipe-panel" class="recipe-panel">
+                <summary><span class="recipe-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 4h12v17l-6-4-6 4z"/></svg></span><span class="recipe-summary-copy"><strong>Saved recipes</strong><small id="recipe-summary">Save settings for next time</small></span><span class="recipe-chevron" aria-hidden="true">＋</span></summary>
+                <div class="recipe-content">
+                  <p id="recipe-empty" class="recipe-note">Save your current settings to reuse them later.</p>
+                  <div id="recipe-library" hidden>
+                    <label for="recipe-select">Choose a recipe</label><select id="recipe-select" disabled><option>No saved recipes</option></select>
+                    <div class="recipe-actions">
+                      <button id="use-settings" type="button" class="settings-action settings-action-primary" disabled>Use recipe</button>
+                      <button id="forget-settings" type="button" class="settings-action recipe-delete" disabled>Delete</button>
+                    </div>
+                  </div>
+                  <div class="recipe-fields">
+                    <label for="recipe-name">Recipe name</label>
+                    <div class="recipe-save-row"><input id="recipe-name" type="text" maxlength="48" value="My recipe" placeholder="e.g. Website images" /><button id="save-settings" type="button" class="settings-action settings-action-primary">Save recipe</button></div>
+                  </div>
+                  <p class="recipe-note">Up to 20 recipes, stored in this browser. Saving the same name updates it.</p>
+                  <div class="recipe-transfer">
+                    <div class="recipe-transfer-heading"><strong>Bring your recipes along</strong><small>Transfer settings between devices.</small></div>
+                    <div class="recipe-actions"><button id="recipe-import" type="button" class="settings-action">Import file</button><button id="recipe-export" type="button" class="settings-action" disabled>Export all</button></div>
+                    <input id="recipe-import-file" type="file" accept="application/json,.json" aria-label="Import recipe JSON" hidden />
+                    <p class="recipe-note">JSON files only. Your images are never included.</p>
+                  </div>
+                </div>
+              </details>
+
+            </div>
+          </details>
         </form>
       </section>
     </main>

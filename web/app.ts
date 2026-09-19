@@ -1,4 +1,5 @@
 import { mountCustomSelects } from "./custom-select";
+import { mountSettingsDisclosure } from "./settings-disclosure";
 import { mountRecipeTransfer } from "./recipe-transfer";
 import { mountToolbox } from "./toolbox";
 import { mountHistory } from "./history";
@@ -83,6 +84,7 @@ const resetButton = byId<HTMLButtonElement>("reset-button");
 const controlHint = byId<HTMLElement>("control-hint");
 const advancedOptions = byId<HTMLDetailsElement>("advanced-options");
 const toast = byId<HTMLDivElement>("toast");
+const settingsDisclosure = mountSettingsDisclosure(controls);
 
 interface ImageInfo {
   width: number;
@@ -433,7 +435,7 @@ function chooseFiles(): void {
 
 dropZone.addEventListener("click", (event) => {
   const target = event.target;
-  if (target instanceof Element && target.closest("button, input, form")) return;
+  if (target instanceof Element && target.closest("button, input, form, details")) return;
   chooseFiles();
 });
 browseButton.addEventListener("click", (event) => {
@@ -683,6 +685,7 @@ function refreshControls(): void {
   for (const range of [brightnessInput, saturationInput, qualityInput, compressionInput, colorsInput]) {
     range.dispatchEvent(new Event("input"));
   }
+  settingsDisclosure.refresh();
 }
 
 function resetControls(): void {
@@ -924,6 +927,9 @@ controls.addEventListener("submit", async (event) => {
     compareTab.disabled = false;
     resultBar.hidden = false;
     setView("result");
+    if (window.matchMedia("(max-width: 920px)").matches) {
+      resultBar.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "nearest" });
+    }
     showToast(local ? "Converted entirely in your browser." : `Image converted with Bun ${response.headers.get("x-bun-version") ?? "1.4"}.`);
   } catch (error) {
     if (!signal.aborted) showToast(error instanceof Error ? error.message : "The image could not be converted.", true);
