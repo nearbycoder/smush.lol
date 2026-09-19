@@ -36,7 +36,10 @@ export async function transformImage(
           withoutEnlargement: settings.withoutEnlargement,
         });
       } else if (settings.height) {
-        const width = Math.max(1, Math.round((settings.height / metadata.height) * metadata.width));
+        const rotated = settings.rotate === 90 || settings.rotate === 270;
+        const sourceWidth = rotated ? metadata.height : metadata.width;
+        const sourceHeight = rotated ? metadata.width : metadata.height;
+        const width = Math.max(1, Math.round((settings.height / sourceHeight) * sourceWidth));
         pipeline.resize(width, settings.height, {
           fit: settings.fit,
           filter: settings.filter,

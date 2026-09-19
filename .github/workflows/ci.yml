@@ -9,11 +9,20 @@ jobs:
   checks:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: 1.4.0
+          bun-version: 1.4.2
       - run: bun install --frozen-lockfile
+      - run: bun audit
       - run: bun run typecheck
       - run: bun test
       - run: bun run build
+      - run: docker build --tag smush:ci .
+      - name: Smoke test the production container
+        run: |
+          docker run --detach --name smush-ci --publish 127.0.0.1:3000:3000 smush:ci
+          trap 'docker rm --force smush-ci' EXIT
+          curl --fail --retry 10 --retry-connrefused --retry-delay 1 http://127.0.0.1:3000/health
+          curl --fail http://127.0.0.1:3000/ --output /dev/null
+          curl --fail --header 'Content-Type: application/json' --data '{"source":{"base64":"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="},"options":{"format":"webp"}}' http://127.0.0.1:3000/api/transform
