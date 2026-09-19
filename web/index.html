@@ -7,7 +7,7 @@
       name="description"
       content="Resize, compress, and edit images. Convert to WebP, JPEG, PNG, or AVIF with batch exports and browser-only options."
     />
-    <meta name="theme-color" content="#fff7ea" />
+    <meta name="theme-color" content="#f7f7f2" />
     <link rel="describedby" href="/llms.txt" type="text/plain" />
     <link rel="canonical" href="https://smush.lol/" />
     <meta property="og:type" content="website" />
@@ -60,6 +60,7 @@
     <script type="module" src="./app.ts"></script>
   </head>
   <body>
+    <a class="skip-link" href="#image-editor">Skip to image editor</a>
     <div class="ambient ambient-one" aria-hidden="true"></div>
     <div class="ambient ambient-two" aria-hidden="true"></div>
 
@@ -86,7 +87,7 @@
         </p>
       </section>
 
-      <section class="workbench" aria-label="Image editor">
+      <section id="image-editor" class="workbench" aria-label="Image editor" tabindex="-1">
         <div class="preview-column">
           <div id="drop-zone" class="drop-zone" aria-describedby="drop-help">
             <input
@@ -115,21 +116,20 @@
             <button id="browse-button" class="browse-button" type="button">Choose images</button>
             <span class="file-note">JPEG, PNG, WebP, HEIC, AVIF &amp; more · 15 MB per image</span>
 
-            <details class="url-source">
-              <summary>Use an image URL</summary>
-            <form id="url-form" class="url-form">
-              <label class="visually-hidden" for="image-url">Public image URL</label>
-              <input id="image-url" type="url" inputmode="url" autocomplete="url" placeholder="https://example.com/image.jpg" required />
-              <button id="url-button" type="submit">Load</button>
-            </form>
-            </details>
-
-            <button id="demo-button" class="demo-button" type="button">
-              Use sample image
-            </button>
+            <div class="source-alternatives">
+              <details class="url-source">
+                <summary>Use an image URL</summary>
+                <form id="url-form" class="url-form">
+                  <label class="visually-hidden" for="image-url">Public image URL</label>
+                  <input id="image-url" type="url" inputmode="url" autocomplete="url" placeholder="https://example.com/image.jpg" spellcheck="false" required />
+                  <button id="url-button" type="submit">Load</button>
+                </form>
+              </details>
+              <button id="demo-button" class="demo-button" type="button">Use sample image</button>
+            </div>
           </div>
 
-          <div id="preview-shell" class="preview-shell" hidden>
+          <div id="preview-shell" class="preview-shell" tabindex="-1" hidden>
             <div class="panel-topbar">
               <div>
                 <span class="panel-kicker">Source image</span>
@@ -140,12 +140,13 @@
               </button>
             </div>
 
-            <div class="compare-tabs" role="tablist" aria-label="Image preview">
-              <button id="original-tab" class="compare-tab active" type="button" role="tab" aria-controls="image-stage" aria-selected="true">Original</button>
-              <button id="result-tab" class="compare-tab" type="button" role="tab" aria-controls="image-stage" aria-selected="false" tabindex="-1" disabled>
-                Result <span class="new-dot" aria-label="new result"></span>
-              </button>
-              <button id="compare-tab" class="compare-tab" type="button" role="tab" aria-controls="image-stage" aria-selected="false" tabindex="-1" disabled>Compare</button>
+            <div class="preview-navigation">
+              <div class="compare-tabs" role="tablist" aria-label="Image preview">
+                <button id="original-tab" class="compare-tab active" type="button" role="tab" aria-controls="image-stage" aria-selected="true">Original</button>
+                <button id="result-tab" class="compare-tab" type="button" role="tab" aria-controls="image-stage" aria-selected="false" tabindex="-1" disabled>Result</button>
+                <button id="compare-tab" class="compare-tab" type="button" role="tab" aria-controls="image-stage" aria-selected="false" tabindex="-1" disabled>Compare</button>
+              </div>
+              <a class="settings-jump small-button" href="#controls">Edit settings <span aria-hidden="true">↓</span></a>
             </div>
 
             <div id="image-stage" class="image-stage" role="tabpanel" aria-labelledby="original-tab">
@@ -238,28 +239,27 @@
           </aside>
         </div>
 
-        <form id="controls" class="control-panel" aria-label="Image controls">
+        <form id="controls" class="control-panel" aria-label="Image controls" tabindex="-1">
           <div class="control-header">
-            <div>
+            <div class="settings-heading">
               <h2>Export settings</h2>
+              <a class="preview-jump" href="#preview-shell">Back to preview <span aria-hidden="true">↑</span></a>
             </div>
-            <button id="reset-button" class="reset-button settings-action" type="button">Reset</button>
-          </div>
-
-          <div class="history-controls" role="group" aria-label="Editing history">
-            <button id="undo-settings" type="button" class="settings-action" disabled><span aria-hidden="true">↶</span> Undo</button>
-            <button id="redo-settings" type="button" class="settings-action" disabled><span aria-hidden="true">↷</span> Redo</button>
-            <small class="history-shortcut">Ctrl / ⌘ Z</small>
+            <div class="history-controls" role="group" aria-label="Editing history">
+              <button id="undo-settings" type="button" class="settings-action" aria-label="Undo settings" title="Undo (Ctrl / ⌘ Z)" disabled><span aria-hidden="true">↶</span></button>
+              <button id="redo-settings" type="button" class="settings-action" aria-label="Redo settings" title="Redo (Ctrl / ⌘ Shift Z)" disabled><span aria-hidden="true">↷</span></button>
+              <button id="reset-button" class="reset-button settings-action" type="button">Reset</button>
+            </div>
           </div>
           <p id="history-status" class="settings-note" aria-live="polite"></p>
           <section class="quick-export" aria-labelledby="quick-export-heading">
-            <div class="settings-section-heading"><h3 id="quick-export-heading">Quick presets</h3><span>Optional</span></div>
+            <div class="settings-section-heading"><h3 id="quick-export-heading">Start with a preset</h3></div>
             <div class="export-presets">
               <button type="button" data-export-preset="web"><span class="preset-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/></svg></span><strong>Web</strong><small>Smaller files</small></button>
               <button type="button" data-export-preset="email"><span class="preset-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7 8 6 8-6"/></svg></span><strong>Email</strong><small>Easy to share</small></button>
               <button type="button" data-export-preset="lossless"><span class="preset-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6z"/><path d="m8 12 3 3 5-6"/></svg></span><strong>Lossless</strong><small>Every pixel</small></button>
             </div>
-            <p id="preset-hint" class="preset-hint" aria-live="polite">Choose a preset, then fine-tune below.</p>
+            <p id="preset-hint" class="preset-hint" aria-live="polite"></p>
           </section>
 
           <details id="size-options" class="advanced-options size-options">

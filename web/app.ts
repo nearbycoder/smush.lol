@@ -705,7 +705,7 @@ function resetControls(): void {
   flopInput.value = "false";
   flipInput.value = "false";
   advancedOptions.open = false;
-  presetHint.textContent = "Choose a preset, then fine-tune below.";
+  presetHint.textContent = "";
   refreshControls();
 }
 
