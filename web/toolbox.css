@@ -1,0 +1,73 @@
+/* Toolbox styles live here, sharing the editor's design tokens. */
+#toolbox-open { background: var(--selected); border-color: #c3d3a6; }
+#toolbox-dialog { --dialog-width: 1180px; }
+.toolbox-layout { display: grid; grid-template-columns: 220px 300px minmax(0, 1fr); align-items: stretch; height: min(650px, calc(100dvh - 150px)); min-height: 340px; }
+.toolbox-settings { min-width: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 20px; border-right: 1px solid var(--border); }
+.tool-library { display: flex; flex-direction: column; min-width: 0; gap: 10px; padding: 20px 16px; border-right: 1px solid var(--border); background: var(--white); }
+#toolbox-search { width: 100%; min-height: var(--control-height); padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--white); color: var(--ink); font: 400 16px/1.4 var(--font-ui); }
+#toolbox-search::placeholder { color: var(--ink-soft); }
+.tool-library-heading { display: flex; justify-content: space-between; align-items: center; min-height: 24px; gap: 12px; color: var(--ink-soft); font-size: 12px; }
+.text-action { padding: 4px 0; border: 0; background: transparent; color: var(--focus); font-size: 12px; font-weight: 600; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.tool-library-list { position: relative; display: grid; align-content: start; gap: 4px; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding: 3px; margin: -3px; }
+.tool-library-item { display: flex; flex-direction: column; gap: 2px; width: 100%; min-height: 52px; padding: 8px 10px; border: 1px solid transparent; border-radius: var(--radius-control); background: transparent; text-align: left; cursor: pointer; }
+.tool-library-item strong { font-size: 13px; font-weight: 550; }
+.tool-library-item small { color: var(--ink-soft); font-size: 11px; }
+.tool-library-item:hover { background: var(--surface); }
+.tool-library-item[aria-pressed=true] { background: var(--selected); border-color: #c3d3a6; }
+.tool-selection-actions { display: flex; gap: 8px; padding-top: 16px; }
+.tool-selection-actions button { flex: 1; font-size: 12px; }
+#toolbox-favorite[aria-pressed=true] { color: var(--success); border-color: #c3d3a6; background: var(--selected); }
+.toolbox-intro { padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+#toolbox-summary, #toolbox-description { margin: 0; color: var(--ink-soft); font-size: 12px; line-height: 1.6; }
+.toolbox-help { margin-top: 8px; }
+.toolbox-help summary { width: fit-content; min-height: 32px; padding-block: 6px; color: var(--ink-soft); font-size: 12px; cursor: pointer; }
+#toolbox-description { padding-top: 8px; }
+#toolbox-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+#toolbox-controls > :not(label), #toolbox-controls > label:has(select, input[type=color], input[type=file], input[type=checkbox]) { grid-column: 1 / -1; }
+#toolbox-controls > label:has(input[type=color]) { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+#toolbox-controls label { font-weight: 550; }
+#toolbox-controls input[type=color] { width: 64px; min-height: var(--control-height); flex-shrink: 0; cursor: pointer; }
+.toolbox-actions { position: sticky; bottom: 0; margin: 0 -20px; padding: 16px 20px; border-top: 1px solid var(--border); background: var(--white); }
+#toolbox-run { flex: 1; background: var(--lime); border-color: #99b94f; }
+#toolbox-run:hover:not(:disabled) { background: var(--lime-bright); }
+.toolbox-preview { position: relative; display: flex; flex-direction: column; min-width: 0; overflow-y: auto; padding: var(--dialog-gutter); background: var(--surface); }
+#toolbox-status { margin: 0 0 16px; color: var(--ink-soft); font-size: 13px; overflow-wrap: anywhere; }
+#toolbox-status:empty, #toolbox-output:empty { display: none; }
+#toolbox-output { display: grid; gap: 16px; }
+#toolbox-output canvas { display: block; max-width: 100%; height: auto; border: 1px solid var(--border); border-radius: var(--radius-control); }
+#toolbox-output p { margin: 0; color: var(--ink-soft); font-size: 12px; }
+#toolbox-output button { overflow-wrap: anywhere; }
+.toolbox-empty { display: grid; flex: 1; align-content: center; justify-items: center; min-height: 400px; padding: 32px 16px; text-align: center; }
+.workspace-dialog .toolbox-empty h3 { margin: 16px 0 8px; font-size: 17px; font-weight: 650; }
+.toolbox-empty p { max-width: 290px; margin: 0; color: var(--ink-soft); }
+.toolbox-empty-mark { display: grid; place-items: center; width: 52px; height: 52px; border: 1px solid #c3d3a6; border-radius: 12px; background: var(--selected); font-size: 28px; }
+#toolbox-output:not(:empty) ~ .toolbox-empty { display: none; }
+.studio-comparison { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.studio-comparison figure { min-width: 0; margin: 0; }
+.studio-comparison canvas { width: 100%; max-height: 400px; object-fit: contain; background: repeating-conic-gradient(var(--border) 0% 25%, var(--white) 0% 50%) 0 / 16px 16px; }
+.studio-comparison figcaption { padding-top: 8px; color: var(--ink-soft); font-size: 12px; overflow-wrap: anywhere; }
+.tool-result-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.tool-result-actions > .creative-action { flex: 1; width: auto; }
+.tool-copy-status { flex-basis: 100%; color: var(--ink-soft); font-size: 12px; overflow-wrap: anywhere; }
+.tool-copy-status:empty { display: none; }
+@media (min-width: 761px) and (max-width: 1050px) {
+  .toolbox-layout { grid-template-columns: 180px 260px minmax(0, 1fr); }
+  .toolbox-settings { padding-inline: 16px; }
+  .toolbox-actions { margin-inline: -16px; padding-inline: 16px; }
+  .toolbox-preview { padding: 20px; }
+  .studio-comparison { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 760px) {
+  .toolbox-layout { grid-template-columns: minmax(0, 1fr); height: auto; }
+  .tool-library { border-right: 0; border-bottom: 1px solid var(--border); padding-inline: var(--dialog-gutter); }
+  .toolbox-settings { overflow: visible; border-right: 0; border-bottom: 1px solid var(--border); padding-inline: var(--dialog-gutter); }
+  .toolbox-actions { margin-inline: calc(-1 * var(--dialog-gutter)); padding-inline: var(--dialog-gutter); }
+  .tool-library-list { grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: 160px; }
+  .toolbox-empty { min-height: 240px; }
+  .toolbox-preview { min-height: 260px; }
+  .toolbox-header p { display: none; }
+}
+@media (max-width: 480px) {
+  .studio-comparison { grid-template-columns: minmax(0, 1fr); }
+  .tool-result-actions > button { flex: 1 1 100%; }
+}

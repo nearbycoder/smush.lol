@@ -58,6 +58,7 @@
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <link rel="stylesheet" href="./styles.css" />
     <link rel="stylesheet" href="./workspaces.css" />
+    <link rel="stylesheet" href="./toolbox.css" />
     <script type="module" src="./app.ts"></script>
   </head>
   <body>
@@ -607,7 +608,17 @@
     <dialog id="toolbox-dialog" class="workspace-dialog" aria-labelledby="toolbox-title">
       <header class="toolbox-header dialog-header"><div><h2 id="toolbox-title">Image toolbox</h2><p>Adjust your image, then download the result.</p></div><button type="button" id="toolbox-close" class="dialog-close" aria-label="Close image toolbox">×</button></header>
       <div class="toolbox-layout">
+          <section class="tool-library" aria-label="Browse image tools">
+            <label class="field-label" for="toolbox-search">Find a tool</label>
+            <input id="toolbox-search" type="search" placeholder="Search tools…" autocomplete="off" aria-controls="toolbox-library" />
+            <label class="visually-hidden" for="toolbox-category">Filter tools</label>
+            <select id="toolbox-category"><option value="all">All tools</option><option value="favorites">Favorites</option><option value="recent">Recently used</option></select>
+            <div class="tool-library-heading"><span id="toolbox-count" role="status"></span><button id="toolbox-clear-search" type="button" class="text-action" hidden>Clear filters</button></div>
+            <div id="toolbox-library" class="tool-library-list"></div>
+            <p id="toolbox-no-tools" class="field-help" hidden>No tools match. Try another search or category.</p>
+          </section>
         <div class="toolbox-settings">
+          <div class="tool-selection-actions"><button id="toolbox-favorite" class="small-button" type="button" aria-pressed="false">☆ Favorite</button><button id="toolbox-reset" class="small-button" type="button">Reset controls</button></div>
           <div class="tool-content"><label>Tool <select id="toolbox-kind"></select></label><label>Image source <select id="toolbox-source"><option value="source">Original source</option><option value="result">Current export (includes edits)</option></select></label></div>
           <div class="toolbox-intro"><p id="toolbox-summary"></p><details class="toolbox-help"><summary>How it works</summary><p id="toolbox-description"></p></details></div><div id="toolbox-controls" class="tool-content"></div>
           <div class="queue-actions toolbox-actions"><button type="button" id="toolbox-run" class="creative-action">Run tool</button><button type="button" id="toolbox-cancel" class="small-button">Clear / cancel</button></div>

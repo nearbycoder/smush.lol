@@ -16,7 +16,7 @@
   await until(() => el("source-name").textContent.includes("studio-fixture"), "Source did not load");
   el("toolbox-open").click(); await tick();
   const keys = Array.from(el("toolbox-kind").options).map(option => option.value).filter(key => key.startsWith("studio-"));
-  assert(keys.length === 20, "Expected 20 new tools");
+  assert(keys.length === 34, "Expected 34 studio tools");
   assert(el("toolbox-kind").querySelectorAll("optgroup").length === 5, "Tools should be grouped");
   const fetchOriginal = window.fetch, requests = [], downloads = [];
   const createURL = URL.createObjectURL, revokeURL = URL.revokeObjectURL, anchorClick = HTMLAnchorElement.prototype.click;

@@ -4,8 +4,8 @@ import { studioLayout } from "../web/tools/studio-layout";
 import { studioSize, studioSpecs, validateStudio, type StudioKind, type StudioValues } from "../web/tools/studio-settings";
 const pixel = (kind: StudioKind, fields: StudioValues, input = [60, 120, 180, 128]) => [...studioPixels(new Uint8ClampedArray(input), 1, 1, kind, fields)];
 
-test("all 20 tools have valid defaults, and invalid inputs fail before allocation", () => {
-  expect(Object.keys(studioSpecs)).toHaveLength(20);
+test("all 34 tools have valid defaults, and invalid inputs fail before allocation", () => {
+  expect(Object.keys(studioSpecs)).toHaveLength(34);
   for (const kind of Object.keys(studioSpecs) as StudioKind[]) expect(() => validateStudio(kind, {})).not.toThrow();
   for (const fields of [{ gamma: "" }, { gamma: "NaN" }, { gamma: "Infinity" }, { gamma: "0" }, { gamma: "6" }]) expect(() => validateStudio("gamma", fields)).toThrow();
   expect(() => validateStudio("levels", { black: "200", white: "100" })).toThrow("black point");

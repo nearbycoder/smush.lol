@@ -1,3 +1,4 @@
+import { advancedKinds, advancedPixels } from "./studio-advanced";
 import { studioSize, validateStudio, type StudioKind, type StudioValues } from "./studio-settings";
 const clamp = (v: number) => Math.max(0, Math.min(255, v));
 const luminance = (r: number, g: number, b: number) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
@@ -18,6 +19,7 @@ export function studioPixels(data: Uint8ClampedArray, width: number, height: num
   studioSize(width, height);
   if (data.length !== width * height * 4) throw new Error("Invalid pixel buffer.");
   const f = validateStudio(kind, fields), amount = Number(f.amount), from = rgb(f.from ?? "#000000"), to = rgb(f.to ?? "#000000");
+  if (advancedKinds.has(kind)) return advancedPixels(data, width, height, kind, f);
   if (kind === "pixelate") {
     const size = Number(f.size);
     for (let by = 0; by < height; by += size) for (let bx = 0; bx < width; bx += size) {

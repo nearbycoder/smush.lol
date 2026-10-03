@@ -219,7 +219,7 @@ Homepage and API docs include static Open Graph and Twitter large-image metadata
 
 ### Photo corrections and creative tools
 
-The **Image toolbox** includes 20 additional tools, grouped alongside the existing inspection and export tools:
+The **Image toolbox** includes 34 photo correction and creative tools, grouped alongside the existing inspection and export tools:
 
 | Tool | Controls and result |
 | --- | --- |
@@ -243,12 +243,31 @@ The **Image toolbox** includes 20 additional tools, grouped alongside the existi
 | Mirrored reflection | Reflected extension below/right with gap, opacity, and fade |
 | Repeating pattern | 1–8 rows/columns at source resolution, optionally alternating mirrored tiles |
 | Drop shadow | Color, opacity, blur, and signed offsets on an expanded transparent canvas |
+| Auto levels | Alpha-weighted histogram endpoints with configurable tail clipping |
+| Auto white balance | Gray-world color-cast correction with strength control |
+| Channel mixer | Independent red, green, and blue gains |
+| Split toning | Separate shadow/highlight colors with a luminance transition |
+| Selective saturation | Target hue, circular hue range, and saturation adjustment |
+| Three-color gradient map | Shadow, midtone, and highlight stops with blend control |
+| Ordered dithering | Monochrome Bayer screen with scale and strength controls |
+| Halftone dots | Luminance-driven ink dots with adjustable cell size and ink/paper colors |
+| Scanlines | Horizontal/vertical lines with spacing, thickness, color, and opacity |
+| Solarize | Channel inversion above a chosen threshold with blend control |
+| Median denoise | 3×3 or 5×5 median-luminance neighborhood with blend control |
+| Gaussian soft blur | Three alpha-weighted box passes approximate Gaussian blur; radius and blend controls |
+| Tilt-shift focus | Horizontal/vertical sharp band with position, width, and surrounding blur |
+| Chromatic aberration | Opposing red/blue offsets with adjustable blend |
+
+
+The toolbox also supports six workflow features: search tool names/descriptions, filter by category, favorite tools, revisit the eight most recently completed tools, reset the current tool's controls, and copy PNG results to the clipboard. Favorites and recent tool IDs are stored locally; images and tool settings are not stored with these preferences. Malformed or outdated preferences are ignored. Recent tools update only after a successful run. Reset cancels pending work and clears stale results while retaining the chosen source. Clipboard errors appear beside the download action.
+
+Desktop layouts separate the tool library, settings, and preview; mobile layouts stack them. Toolbox styles live in `web/toolbox.css`, workspace components in `web/workspaces.css`, and shared tokens in `web/styles.css`. API docs use the same palette and type tokens. Keyboard focus remains on the selected library tool after selection.
 
 Choose the original source or current export, adjust controls, and run the tool to compare before/after and download a PNG. **Use result in next toolbox step** selects the generated image as a temporary source for any toolbox tool. Closing the dialog releases that temporary image; download it first to keep it. The original image and editor settings are unchanged. Toolbox operations are separate from recipes, batch settings, and the server API/MCP.
 
 These tools preserve source resolution and accept at most 12 megapixels / 12,000px per side, including expanded layouts. Oversized output is rejected before canvas allocation; resize in the editor and choose the current export first. They never upload image bytes. Pixel effects run in cancellable workers; changing controls, choosing a different tool/source, clearing, or closing invalidates pending results. Transparent pixels and source alpha are preserved except for explicit transparency tools. PNGs contain the rendered raster; metadata is not copied. White balance is a creative RGB adjustment, and tonal corrections cannot recover clipped image detail. Pixelation is cosmetic: use solid redaction to conceal sensitive information.
 
-Validation covers numerical reference outputs, transparency, layout budgets, and every tool's PNG download. Run `agent-browser --session smush-tools eval --stdin < tests/browser/studio.js` against the built app for browser checks, including chained operations, invalid settings, cancellation of active workers, and zero image API requests. Run at desktop and mobile viewport sizes.
+Validation covers numerical reference outputs, transparency, layout budgets, and every tool's PNG download. Run `agent-browser --session smush-tools eval --stdin < tests/browser/studio.js` against the built app for browser checks, including all 34 tools, chained operations, invalid settings, cancellation of active workers, and zero image API requests. Run `agent-browser --session smush-tools eval --stdin < tests/browser/toolbox-workflow.js` after loading an image to check search, categories, favorites, recency, reset, PNG clipboard writing, and clipboard failure feedback. Run at desktop and mobile viewport sizes.
 
 ## API and MCP integrations
 
