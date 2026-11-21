@@ -82,6 +82,18 @@ test("MCP validates origin, host, methods, JSON and protocol envelopes", async (
   expect((await post('{"jsonrpc":"2.0","id":1,"method":"tools/list"}', { Accept: "application/json" })).status).toBe(406);
   for (const method of ["GET", "DELETE"]) expect((await fetch(`${base}/mcp`, { method })).status).toBe(405);
   expect((await fetch(`${base}/mcp`, { method: "OPTIONS", headers: { Origin: base } })).headers.get("access-control-allow-origin")).toBe(base);
+  // HTTP downgrade against production host must be rejected.
+  expect((await app.handle(new Request("http://smush.lol/mcp", {
+    method: "POST",
+    headers: { Origin: "http://smush.lol", "Content-Type": "application/json" },
+    body: "{}",
+  }))).status).toBe(403);
+  // Empty and oversized JSON-RPC batches are rejected before dispatch.
+  expect((await post("[]")).status).toBe(400);
+  const oversizedBatch = JSON.stringify(Array.from({ length: 11 }, (_, id) => ({ jsonrpc: "2.0", id, method: "tools/list" })));
+  const batchRes = await post(oversizedBatch);
+  expect(batchRes.status).toBe(400);
+  expect((await batchRes.json()).error.code).toBe(-32600);
 });
 
 test("stateless calls work without initialization or discovery and never mint sessions", async () => {

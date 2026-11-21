@@ -1,10 +1,14 @@
 import { createMcpHandler, isLegacyRequest, McpServer, WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import {
-  agentError, capabilities, createImageUrl, imageUrlSchema, inspectImage, inspectSchema,
-  PUBLIC_URL, readAgentJson, transformAgentImage, transformSchema,
+  agentError, capabilities, capabilitiesJson, createImageUrl, imageUrlSchema, inspectImage, inspectSchema,
+  MAX_AGENT_BODY_BYTES, PUBLIC_URL, readAgentJson, transformAgentImage, transformSchema,
 } from "./agent-api";
 import { usageGuide } from "./usage";
+
+const MAX_MCP_BATCH_SIZE = 10;
+const PUBLIC_HOST = new URL(PUBLIC_URL).hostname;
+const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
 
 export function createMcpServer() {
   const server = new McpServer({ name: "smush.lol", version: "1.0.0" }, {
@@ -15,7 +19,7 @@ export function createMcpServer() {
   server.registerTool("get_capabilities", {
     title: "Image processing capabilities", description: "Discover server formats, defaults, supported operations, size limits, and documentation.",
     inputSchema: z.strictObject({}), annotations: { ...annotations, openWorldHint: false },
-  }, async () => ({ content: [{ type: "text", text: JSON.stringify(capabilities) }], structuredContent: capabilities }));
+  }, async () => ({ content: [{ type: "text", text: capabilitiesJson }], structuredContent: capabilities }));
   server.registerTool("inspect_image", {
     title: "Inspect an image", description: "Inspect image dimensions, detected format, filename and byte size from a public URL or up to 4 MiB of inline base64. Does not store the source.",
     inputSchema: inspectSchema, annotations,
@@ -44,7 +48,7 @@ export function createMcpServer() {
     } catch (error) { return toolError(error); }
   });
   server.registerResource("usage", "smush://usage", { title: "smush.lol usage guide", mimeType: "text/markdown" }, async (uri) => ({ contents: [{ uri: uri.href, mimeType: "text/markdown", text: usageGuide }] }));
-  server.registerResource("capabilities", "smush://capabilities", { title: "Server capabilities", mimeType: "application/json" }, async (uri) => ({ contents: [{ uri: uri.href, mimeType: "application/json", text: JSON.stringify(capabilities) }] }));
+  server.registerResource("capabilities", "smush://capabilities", { title: "Server capabilities", mimeType: "application/json" }, async (uri) => ({ contents: [{ uri: uri.href, mimeType: "application/json", text: capabilitiesJson }] }));
   return server;
 }
 
@@ -53,14 +57,22 @@ function toolError(error: unknown) {
 }
 
 // Both protocol eras use the same tools, validation and per-request server factory.
-const handler = createMcpHandler(createMcpServer, { legacy: "reject", maxSubscriptions: 0 });
+const handler = createMcpHandler(createMcpServer, {
+  legacy: "reject",
+  maxSubscriptions: 0,
+  maxRequestBodySize: MAX_AGENT_BODY_BYTES,
+});
 
 async function serveMcp(request: Request, body: unknown): Promise<Response> {
   if (!await isLegacyRequest(request, body)) return handler.fetch(request, { parsedBody: body });
 
   // Preserve the existing JSON response shape for stable initialize-based clients.
   const server = createMcpServer();
-  const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
+  const transport = new WebStandardStreamableHTTPServerTransport({
+    sessionIdGenerator: undefined,
+    enableJsonResponse: true,
+    maxRequestBodySize: MAX_AGENT_BODY_BYTES,
+  });
   try {
     await server.connect(transport);
     return await transport.handleRequest(request, { parsedBody: body });
@@ -69,10 +81,10 @@ async function serveMcp(request: Request, body: unknown): Promise<Response> {
 
 export async function handleMcp(request: Request): Promise<Response> {
   const url = new URL(request.url);
-  const publicHost = new URL(PUBLIC_URL).hostname;
-  const hostAllowed = [publicHost, "localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
+  const isLoopback = LOOPBACK_HOSTS.has(url.hostname);
+  const hostAllowed = url.hostname === PUBLIC_HOST || isLoopback;
   const origin = request.headers.get("origin");
-  const originAllowed = !origin || origin === PUBLIC_URL || (hostAllowed && origin === url.origin);
+  const originAllowed = !origin || origin === PUBLIC_URL || (isLoopback && origin === url.origin);
   const headers = new Headers({ "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", Vary: "Origin" });
   const fail = (status: number, code: number, message: string) => Response.json({ jsonrpc: "2.0", id: null, error: { code, message } }, { status, headers });
   if (!hostAllowed || !originAllowed) return fail(403, -32000, "MCP host or Origin is not allowed.");
@@ -89,6 +101,9 @@ export async function handleMcp(request: Request): Promise<Response> {
   catch (error) {
     const result = agentError(error);
     return fail(result.status, result.error.includes("valid JSON") ? -32700 : -32600, result.error);
+  }
+  if (Array.isArray(body) && (body.length === 0 || body.length > MAX_MCP_BATCH_SIZE)) {
+    return fail(400, -32600, `JSON-RPC batches must contain 1 to ${MAX_MCP_BATCH_SIZE} requests.`);
   }
   try {
     const response = await serveMcp(request, body);

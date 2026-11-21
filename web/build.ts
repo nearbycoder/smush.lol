@@ -8,8 +8,12 @@ if (!result.success) { console.error(result.logs); process.exit(1); }
 await cp("web/social", "public/social", { recursive: true });
 for (const codec of ["avif", "webp"]) {
   await mkdir(`public/codecs/${codec}`, { recursive: true });
-  await cp(`node_modules/@jsquash/${codec}/codec/enc`, `public/codecs/${codec}`, { recursive: true });
+  for await (const name of new Bun.Glob("*.{wasm,js,mjs}").scan(`node_modules/@jsquash/${codec}/codec/enc`)) {
+    await cp(`node_modules/@jsquash/${codec}/codec/enc/${name}`, `public/codecs/${codec}/${name}`);
+  }
 }
 
 await mkdir("public/models/runtime", { recursive: true });
-for await (const name of new Bun.Glob("*.{wasm,mjs}").scan("node_modules/onnxruntime-web/dist")) await cp(`node_modules/onnxruntime-web/dist/${name}`, `public/models/runtime/${name}`);
+for await (const name of new Bun.Glob("ort-wasm-*.{wasm,mjs}").scan("node_modules/onnxruntime-web/dist")) {
+  await cp(`node_modules/onnxruntime-web/dist/${name}`, `public/models/runtime/${name}`);
+}

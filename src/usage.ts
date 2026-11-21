@@ -21,7 +21,7 @@ Typical remote client configuration (client-specific configuration may vary):
 {"mcpServers":{"smush":{"url":"${PUBLIC_URL}/mcp"}}}
 \`\`\`
 
-For local processing, clone https://github.com/nearbycoder/smush.lol, install Bun 1.4.2 or newer, run bun install --frozen-lockfile, and launch bun run mcp. For a process-spawning client, use command "bun" with args ["run", "/absolute/path/to/smush.lol/src/mcp-stdio.ts"]. Both protocol generations are supported over stdio. Only JSON-RPC is written to stdout. Local stdio handles inline images locally; URL sources are fetched from their public hosts. The hosted MCP endpoint processes images on the smush.lol server.
+For local processing, clone https://github.com/nearbycoder/smush.lol, install Bun 1.4.5 or newer, run bun install --frozen-lockfile, and launch bun run mcp. For a process-spawning client, use command "bun" with args ["run", "/absolute/path/to/smush.lol/src/mcp-stdio.ts"]. Both protocol generations are supported over stdio. Only JSON-RPC is written to stdout. Local stdio handles inline images locally; URL sources are fetched from their public hosts. The hosted MCP endpoint processes images on the smush.lol server.
 
 Tools:
 - get_capabilities: no arguments; returns server formats, options, limits, and documentation URLs.

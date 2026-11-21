@@ -1,9 +1,12 @@
 import * as dns from "node:dns/promises";
 import { BlockList, isIP } from "node:net";
+import { PUBLIC_URL } from "./security";
 import { MAX_FILE_BYTES } from "./transform";
 
 const MAX_REDIRECTS = 3;
+const MAX_RESOLVED_ADDRESSES = 8;
 const FETCH_TIMEOUT_MS = 10_000;
+export const INTERNAL_FETCH_HEADER = "X-Smush-Fetch";
 
 const blockedAddresses = new BlockList();
 const globalIPv6 = new BlockList();
@@ -55,7 +58,7 @@ export class RemoteImageError extends Error {
 }
 
 function normalizedHostname(url: URL): string {
-  return url.hostname.toLowerCase().replace(/^\[|\]$/g, "").replace(/\.$/, "");
+  return url.hostname.toLowerCase().replace(/^\[|\]$/g, "").replace(/\.+$/, "");
 }
 
 export function isBlockedAddress(address: string): boolean {
@@ -87,14 +90,19 @@ async function resolveRemoteUrl(value: string | URL, signal?: AbortSignal) {
   if (url.port && url.port !== "80" && url.port !== "443") {
     throw new RemoteImageError("Image URLs must use a standard web port.", 400);
   }
+  if (url.origin === PUBLIC_URL && url.pathname.startsWith("/api/")) {
+    throw new RemoteImageError("Recursive smush.lol API URLs are not allowed.", 403);
+  }
 
   const hostname = normalizedHostname(url);
   const family = isIP(hostname);
   if (
     !hostname ||
+    hostname.includes("..") ||
     hostname === "localhost" ||
     (family === 0 && !hostname.includes(".")) ||
     hostname.endsWith(".localhost") ||
+    hostname.endsWith(".localdomain") ||
     hostname.endsWith(".local") ||
     hostname.endsWith(".internal") ||
     hostname.endsWith(".home.arpa")
@@ -121,7 +129,16 @@ async function resolveRemoteUrl(value: string | URL, signal?: AbortSignal) {
     throw new RemoteImageError("Private network image URLs are not allowed.", 403);
   }
 
-  return { url, addresses };
+  const unique: Array<{ address: string; family: number }> = [];
+  const seen = new Set<string>();
+  for (const entry of addresses) {
+    if (seen.has(entry.address)) continue;
+    seen.add(entry.address);
+    unique.push(entry);
+    if (unique.length >= MAX_RESOLVED_ADDRESSES) break;
+  }
+
+  return { url, addresses: unique };
 }
 
 export async function assertSafeRemoteUrl(value: string | URL): Promise<URL> {
@@ -155,10 +172,10 @@ async function fetchResolved(target: Awaited<ReturnType<typeof resolveRemoteUrl>
           Host: target.url.host,
           Accept: "image/avif,image/webp,image/png,image/jpeg,image/*;q=0.8",
           "User-Agent": "smush.lol/1.0 image transformer",
+          [INTERNAL_FETCH_HEADER]: "1",
         },
         // Dial the checked address while retaining HTTPS identity verification.
         tls: target.url.protocol === "https:" ? { serverName: normalizedHostname(target.url) } : undefined,
-        // @ts-expect-error Bun 1.4.2 supports false; bun-types has not added it yet.
         proxy: false,
         redirect: "manual",
         signal,
@@ -178,7 +195,7 @@ function filenameFromUrl(url: URL): string {
   }
 }
 
-async function readLimitedBody(response: Response): Promise<Uint8Array> {
+async function readLimitedBody(response: Response, signal: AbortSignal): Promise<Uint8Array<ArrayBuffer>> {
   if (!response.body) {
     throw new RemoteImageError("The image host returned an empty response.", 502);
   }
@@ -186,10 +203,15 @@ async function readLimitedBody(response: Response): Promise<Uint8Array> {
   const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];
   let total = 0;
+  const cancel = () => { void reader.cancel(signal.reason).catch(() => {}); };
+  signal.addEventListener("abort", cancel, { once: true });
+  if (signal.aborted) cancel();
 
   try {
     while (true) {
+      signal.throwIfAborted();
       const { done, value } = await reader.read();
+      signal.throwIfAborted();
       if (done) break;
       total += value.byteLength;
       if (total > MAX_FILE_BYTES) {
@@ -199,9 +221,13 @@ async function readLimitedBody(response: Response): Promise<Uint8Array> {
       chunks.push(value);
     }
   } finally {
+    signal.removeEventListener("abort", cancel);
     reader.releaseLock();
   }
 
+  if (chunks.length === 1 && chunks[0]!.buffer instanceof ArrayBuffer) {
+    return chunks[0]! as Uint8Array<ArrayBuffer>;
+  }
   const bytes = new Uint8Array(total);
   let offset = 0;
   for (const chunk of chunks) {
@@ -237,11 +263,14 @@ export async function fetchRemoteImage(source: string, timeoutMs = FETCH_TIMEOUT
           throw new RemoteImageError("The remote image must be 15 MB or smaller.", 413);
         }
         const contentType = response.headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase();
-        if (contentType && !contentType.startsWith("image/") && contentType !== "application/octet-stream") {
+        if (
+          contentType &&
+          (contentType === "image/svg+xml" || (!contentType.startsWith("image/") && contentType !== "application/octet-stream"))
+        ) {
           throw new RemoteImageError("The URL did not return an image.", 415);
         }
         return {
-          bytes: await readLimitedBody(response),
+          bytes: await readLimitedBody(response, controller.signal),
           filename: filenameFromUrl(target.url),
           sourceUrl: target.url,
         };

@@ -86,8 +86,8 @@ export function mountQueue(form: HTMLFormElement, notify: (message: string, erro
   });
   sort.addEventListener("click", () => { if (queue.sort(order.value)) notify("Queue order updated. Conversion and ZIP downloads use this order."); });
   template.addEventListener("input", render); sequence.addEventListener("input", render);
-  form.addEventListener("change", render);
-  form.addEventListener("click", () => queueMicrotask(render));
+  form.addEventListener("change", () => { if (queue.jobs.length) render(); });
+  form.addEventListener("click", () => { if (queue.jobs.length) queueMicrotask(render); });
   cancel.addEventListener("click", () => queue.cancelAll());
   document.querySelector("#queue-clear")!.addEventListener("click", () => queue.clear());
   archive.addEventListener("click", async () => {

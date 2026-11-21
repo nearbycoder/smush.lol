@@ -1,4 +1,4 @@
-import { canvasBlob, decodeSource } from "./local-image";
+import { canvasBlob, decodeSource, isSvg, safeSource } from "./local-image";
 import { pdfLayout, sheetLayout } from "./collection-layout";
 import { downloadBlob } from "./archive";
 export interface CollectionEntry { file: File; name: string }
@@ -35,8 +35,22 @@ export function mountCollections(sources: (results: boolean) => CollectionEntry[
     for (const [file, url] of thumbnails) if (!entries.some(entry => entry.file === file)) { URL.revokeObjectURL(url); thumbnails.delete(file); }
     list.replaceChildren(...entries.map((entry, index) => {
       const row = document.createElement("li"), thumb = document.createElement("img"), copy = document.createElement("div"), label = document.createElement("strong"), detail = document.createElement("small"), buttons = document.createElement("div");
-      if (!thumbnails.has(entry.file)) thumbnails.set(entry.file, URL.createObjectURL(entry.file));
-      thumb.src = thumbnails.get(entry.file)!; thumb.alt = ""; thumb.width = thumb.height = 48; thumb.loading = "lazy"; thumb.decoding = "async"; thumb.className = "collection-thumb";
+      if (thumbnails.has(entry.file)) {
+        thumb.src = thumbnails.get(entry.file)!;
+      } else if (isSvg(entry.file)) {
+        const currentVersion = version;
+        void safeSource(entry.file).then(blob => {
+          if (currentVersion !== version || !entries.some(item => item.file === entry.file)) return;
+          const url = thumbnails.get(entry.file) ?? URL.createObjectURL(blob);
+          thumbnails.set(entry.file, url);
+          thumb.src = url;
+        }).catch(() => { thumb.hidden = true; });
+      } else {
+        const url = URL.createObjectURL(entry.file);
+        thumbnails.set(entry.file, url);
+        thumb.src = url;
+      }
+      thumb.alt = ""; thumb.width = thumb.height = 48; thumb.loading = "lazy"; thumb.decoding = "async"; thumb.className = "collection-thumb";
       thumb.addEventListener("error", () => { thumb.hidden = true; });
       copy.className = "collection-file"; label.textContent = entry.name; label.title = entry.name;
       detail.textContent = `${index + 1} of ${entries.length} · ${Math.max(1, Math.ceil(entry.file.size / 1024))} KB`; copy.append(label, detail); buttons.className = "collection-row-actions";

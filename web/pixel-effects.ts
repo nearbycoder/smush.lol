@@ -1,8 +1,13 @@
 declare const SMUSH_BUILD_ID: string;
 import { hasPixelEffects } from "./finishing-settings";
+
+let idlePixelWorker: Worker | null = null;
+
 export async function runPixelTask(pixels: ImageData, fields: Record<string, string>, signal: AbortSignal, operation = "adjust") {
   signal.throwIfAborted();
-  const worker = new Worker(`/pixel-worker.js?v=${SMUSH_BUILD_ID}`, { type: "module" });
+  const worker = idlePixelWorker ?? new Worker(`/pixel-worker.js?v=${SMUSH_BUILD_ID}`, { type: "module" });
+  idlePixelWorker = null;
+  let reusable = false;
   let abort: () => void = () => {};
   try {
     const result = await new Promise<{ pixels: ImageData; bounds: { x: number; y: number; width: number; height: number } }>((resolve, reject) => {
@@ -13,8 +18,15 @@ export async function runPixelTask(pixels: ImageData, fields: Record<string, str
       worker.postMessage({ pixels, fields, operation }, [pixels.data.buffer]);
     });
     signal.throwIfAborted();
+    reusable = true;
     return result;
-  } finally { signal.removeEventListener("abort", abort); worker.terminate(); }
+  } finally {
+    signal.removeEventListener("abort", abort);
+    worker.onmessage = null;
+    worker.onerror = null;
+    if (reusable && !idlePixelWorker) idlePixelWorker = worker;
+    else worker.terminate();
+  }
 }
 
 export async function paintPixelEffects(canvas: HTMLCanvasElement, fields: Record<string, string>, signal: AbortSignal) {

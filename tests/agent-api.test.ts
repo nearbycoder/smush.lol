@@ -34,6 +34,8 @@ test("JSON options reject unsupported formats, unknown fields and ambiguous sour
     { source: { base64: "%%%%" } },
     { source: { base64: "data:image/png;base64," + pixelBase64 } },
     { source: { base64: "AB==" } },
+    { source: { base64: "AAB=" } },
+    { source: { base64: "====" } },
   ]) {
     const response = await post("/api/transform", body);
     expect(response.status).toBe(400);

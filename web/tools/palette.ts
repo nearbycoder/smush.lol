@@ -1,12 +1,23 @@
 import { sourceCanvas, number, paragraph, download, type ImageTool } from "./shared";
 export function palette(data: Uint8ClampedArray, count: number) {
-  const buckets = new Map<number, { r: number; g: number; b: number; count: number }>(); let total = 0;
-  for (let i = 0; i < data.length; i += 4) {
+  const sumR = new Uint32Array(512), sumG = new Uint32Array(512), sumB = new Uint32Array(512), counts = new Uint32Array(512);
+  let total = 0;
+  for (let i = 0, len = data.length; i < len; i += 4) {
     if (data[i + 3]! < 128) continue;
-    const r = data[i]!, g = data[i + 1]!, b = data[i + 2]!, key = (r >> 5) * 64 + (g >> 5) * 8 + (b >> 5);
-    const item = buckets.get(key) ?? { r: 0, g: 0, b: 0, count: 0 }; item.r += r; item.g += g; item.b += b; item.count++; total++; buckets.set(key, item);
+    const r = data[i]!, g = data[i + 1]!, b = data[i + 2]!;
+    const key = ((r >> 5) << 6) | ((g >> 5) << 3) | (b >> 5);
+    sumR[key]! += r; sumG[key]! += g; sumB[key]! += b; counts[key]!++; total++;
   }
-  return [...buckets.values()].sort((a, b) => b.count - a.count).slice(0, count).map(item => ({ hex: "#" + [item.r, item.g, item.b].map(n => Math.round(n / item.count).toString(16).padStart(2, "0")).join(""), percent: item.count / total * 100 }));
+  if (!total) return [];
+  const buckets: Array<{ r: number; g: number; b: number; count: number }> = [];
+  for (let key = 0; key < 512; key++) {
+    const c = counts[key]!;
+    if (c) buckets.push({ r: sumR[key]!, g: sumG[key]!, b: sumB[key]!, count: c });
+  }
+  return buckets.sort((a, b) => b.count - a.count).slice(0, count).map(item => ({
+    hex: "#" + Math.round(item.r / item.count).toString(16).padStart(2, "0") + Math.round(item.g / item.count).toString(16).padStart(2, "0") + Math.round(item.b / item.count).toString(16).padStart(2, "0"),
+    percent: item.count / total * 100,
+  }));
 }
 export const paletteTool: ImageTool = {
   title: "Color palette", description: "Extract dominant colors from a 256px sample. Transparent pixels are excluded; percentages describe visible sample pixels.",
