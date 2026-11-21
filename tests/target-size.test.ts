@@ -41,3 +41,21 @@ test("real encoding meets target without changing output dimensions", async () =
   expect(output.width).toBe(source.width);
   expect(output.height).toBe(source.height);
 });
+
+test("transformed targetKB search preserves geometry and stays under target", async () => {
+  const bytes = await Bun.file(new URL("../.github/assets/editor.jpg", import.meta.url)).arrayBuffer();
+  const settings = parseTransformSettings({
+    format: "jpeg",
+    width: "900",
+    rotate: "90",
+    quality: "95",
+    targetKB: "55",
+  });
+  const result = await transformImage(bytes, "editor.jpg", settings);
+  expect(result.output.size).toBeLessThanOrEqual(55 * 1024);
+  expect(result.quality).toBeLessThan(95);
+  const output = await new Bun.Image(result.output).metadata();
+  expect(output.width).toBe(result.width);
+  expect(output.height).toBe(result.height);
+  expect(output.width).toBeLessThanOrEqual(900);
+});

@@ -1,12 +1,12 @@
 import { staticPlugin } from "@elysiajs/static";
 import { Elysia, t } from "elysia";
-import { agentError, capabilities, inspectImage, inspectSchema, readAgentJson, transformAgentImage, transformSchema } from "./agent-api";
+import { agentError, capabilitiesJson, inspectImage, inspectSchema, readAgentJson, transformAgentImage, transformSchema } from "./agent-api";
 import { handleMcp } from "./mcp";
-import { openapi } from "./openapi";
+import { openapiJson } from "./openapi";
 import { usageGuide } from "./usage";
-import { securityHeaders } from "./security";
+import { isHttpsRequest, securityHeaders } from "./security";
 import { transformImage } from "./image";
-import { fetchRemoteImage, RemoteImageError } from "./remote-image";
+import { fetchRemoteImage, INTERNAL_FETCH_HEADER, RemoteImageError } from "./remote-image";
 import {
   errorMessage,
   MAX_FILE_BYTES,
@@ -26,6 +26,30 @@ const imageTypes = [
   "image/avif",
   "image/tiff",
 ];
+
+const safeSourceFormats = new Set([
+  "jpeg",
+  "png",
+  "webp",
+  "gif",
+  "bmp",
+  "heic",
+  "heif",
+  "avif",
+  "tiff",
+]);
+
+const HASHED_ASSET_RE = /^\/(?:chunk-|favicon-)[a-z0-9]+\.(?:js|css|svg)$/i;
+const HTML_CACHE_CONTROL = "public, max-age=60, stale-while-revalidate=300";
+const IMMUTABLE_CACHE_CONTROL = "public, max-age=31536000, immutable";
+
+function safeAttachmentFilename(filename: string): string {
+  const sanitized = filename
+    .replace(/[^a-zA-Z0-9._-]/g, "_")
+    .replace(/^\.+/, "")
+    .slice(0, 128);
+  return sanitized || "remote-image";
+}
 
 const transformFieldSchema = {
   width: t.Optional(t.String()),
@@ -90,14 +114,23 @@ function handleImageError(error: unknown, set: { status?: number | string }): { 
 function docsPage(): Response {
   return new Response(Bun.file("public/docs.html"), {
     headers: {
-      "Cache-Control": "public, max-age=3600",
+      "Cache-Control": HTML_CACHE_CONTROL,
       "Content-Type": "text/html; charset=utf-8",
       "X-Content-Type-Options": "nosniff",
     },
   });
 }
 
-const jsonApiHeaders = { "Cache-Control": "no-store", "Access-Control-Allow-Origin": "*", "X-Content-Type-Options": "nosniff" };
+const jsonApiHeaders = {
+  "Cache-Control": "no-store",
+  "Access-Control-Allow-Origin": "*",
+  "X-Content-Type-Options": "nosniff",
+};
+const precomputedJsonHeaders = {
+  ...jsonApiHeaders,
+  "Content-Type": "application/json; charset=utf-8",
+};
+
 async function agentResponse(request: Request, operation: "inspect" | "transform") {
   try {
     const input = await readAgentJson(request);
@@ -114,9 +147,28 @@ async function agentResponse(request: Request, operation: "inspect" | "transform
 export const app = new Elysia({
   serve: {
     maxRequestBodySize: MAX_FILE_BYTES + 1024 * 1024,
+    idleTimeout: 30,
   },
 })
-  .onRequest(({ set }) => { Object.assign(set.headers, securityHeaders); })
+  .onRequest(({ request, set }) => {
+    Object.assign(set.headers, securityHeaders);
+    if (isHttpsRequest(request)) {
+      set.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
+    }
+  })
+  .onAfterHandle(({ path, responseValue, set }) => {
+    const cacheControl = HASHED_ASSET_RE.test(path)
+      ? IMMUTABLE_CACHE_CONTROL
+      : (path === "/" || path === "/index.html" || path === "/docs.html")
+        ? HTML_CACHE_CONTROL
+        : undefined;
+    if (!cacheControl) return;
+    delete set.headers["Cache-Control"];
+    set.headers["cache-control"] = cacheControl;
+    if (responseValue instanceof Response) {
+      responseValue.headers.set("Cache-Control", cacheControl);
+    }
+  })
   .get("/health", () => ({
     ok: true,
     runtime: "bun",
@@ -126,22 +178,29 @@ export const app = new Elysia({
   .get("/llms.txt", () => new Response(usageGuide, { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=3600", "X-Content-Type-Options": "nosniff" } }))
   .get("/llm.txt", () => new Response(null, { status: 301, headers: { Location: "/llms.txt" } }))
   .get("/LLM.txt", () => new Response(null, { status: 301, headers: { Location: "/llms.txt" } }))
-  .get("/openapi.json", () => Response.json(openapi, { headers: jsonApiHeaders }))
-  .get("/api/capabilities", () => Response.json(capabilities, { headers: jsonApiHeaders }))
+  .get("/openapi.json", () => new Response(openapiJson, { headers: precomputedJsonHeaders }))
+  .get("/api/capabilities", () => new Response(capabilitiesJson, { headers: precomputedJsonHeaders }))
   .options("/api/*", () => new Response(null, { status: 204, headers: { ...jsonApiHeaders, "Access-Control-Allow-Methods": "GET, POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type" } }))
   .post("/api/inspect", ({ request }) => agentResponse(request, "inspect"), { parse: "none" })
   .post("/api/transform", ({ request }) => agentResponse(request, "transform"), { parse: "none" })
   .all("/mcp", ({ request }) => handleMcp(request), { parse: "none" })
-  .get("/api/source", async ({ query, set }) => {
+  .get("/api/source", async ({ query, request, set }) => {
     try {
+      if (request.headers.has(INTERNAL_FETCH_HEADER)) {
+        throw new RemoteImageError("Recursive smush.lol API URLs are not allowed.", 403);
+      }
       const remote = await fetchRemoteImage(query.url);
       const metadata = await new Bun.Image(remote.bytes, { autoOrient: true, maxPixels: MAX_PIXELS }).metadata();
-      const type = metadata.format;
-      return new Response(new Uint8Array(remote.bytes), { headers: {
+      const type = metadata.format.toLowerCase();
+      if (!safeSourceFormats.has(type)) {
+        throw new RemoteImageError("The URL did not return a supported image.", 415);
+      }
+      return new Response(remote.bytes, { headers: {
         "Content-Type": `image/${type}`,
         "Content-Length": String(remote.bytes.byteLength),
-        "Content-Disposition": `attachment; filename="${remote.filename.replace(/[^a-zA-Z0-9._-]/g, "_")}"`,
+        "Content-Disposition": `attachment; filename="${safeAttachmentFilename(remote.filename)}"`,
         "Cache-Control": "no-store",
+        "Cross-Origin-Resource-Policy": "same-origin",
         "X-Content-Type-Options": "nosniff",
         "X-Image-Width": String(metadata.width),
         "X-Image-Height": String(metadata.height),
@@ -150,10 +209,13 @@ export const app = new Elysia({
   }, { query: t.Object({ url: t.String({ minLength: 1, maxLength: 4096 }) }) })
   .get(
     "/api/image",
-    async ({ query, set }) => {
+    async ({ query, request, set }) => {
       const { url, ...fields } = query;
 
       try {
+        if (request.headers.has(INTERNAL_FETCH_HEADER)) {
+          throw new RemoteImageError("Recursive smush.lol API URLs are not allowed.", 403);
+        }
         const settings = parseTransformSettings(fields);
         const remote = await fetchRemoteImage(url);
         return await imageResponse(remote.bytes, remote.filename, settings, {
@@ -198,6 +260,10 @@ export const app = new Elysia({
     },
   )
   .onError(({ code, error, path, set }) => {
+    if (code === "NOT_FOUND") {
+      set.status = 404;
+      return { error: "Not found." };
+    }
     if (code === "VALIDATION") {
       set.status = 400;
       return {
@@ -216,8 +282,8 @@ export const app = new Elysia({
       assets: "public",
       prefix: "/",
       indexHTML: true,
+      maxAge: 3600,
       headers: {
-        "Cache-Control": "public, max-age=3600",
         "X-Content-Type-Options": "nosniff",
       },
     }),

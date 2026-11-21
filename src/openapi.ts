@@ -31,3 +31,4 @@ export const openapi = {
   },
   components: { schemas: { TransformOptions: options } },
 };
+export const openapiJson = JSON.stringify(openapi);

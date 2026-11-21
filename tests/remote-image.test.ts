@@ -3,6 +3,7 @@ import * as dns from "node:dns/promises";
 import {
   assertSafeRemoteUrl,
   fetchRemoteImage,
+  INTERNAL_FETCH_HEADER,
   isBlockedAddress,
   RemoteImageError,
 } from "../src/remote-image";
@@ -166,6 +167,45 @@ test("bounds a remote body even when Content-Length is absent", async () => {
   }), { headers: { "Content-Type": "image/png" } })) as unknown as typeof fetch;
   try {
     await expect(fetchRemoteImage("https://8.8.8.8/large.png")).rejects.toMatchObject({ status: 413 });
+    expect(cancelled).toBe(true);
+  } finally { globalThis.fetch = originalFetch; }
+});
+
+test("blocks recursive smush.lol API URLs, malformed dot hostnames, and remote SVGs", async () => {
+  for (const url of [
+    "https://smush.lol/api/image?url=https://8.8.8.8/a.png",
+    "https://smush.lol/api/source?url=https://8.8.8.8/a.png",
+    "http://localhost../image.png",
+    "http://foo..example.com/image.png",
+    "http://server.localdomain/image.png",
+  ]) {
+    await expect(assertSafeRemoteUrl(url)).rejects.toMatchObject({ status: 403 });
+  }
+
+  const originalFetch = globalThis.fetch;
+  const sentLoopHeaders: Array<string | null> = [];
+  globalThis.fetch = (async (_url: unknown, options?: RequestInit) => {
+    sentLoopHeaders.push(new Headers(options?.headers).get(INTERNAL_FETCH_HEADER));
+    return new Response("<svg/>", { headers: { "Content-Type": "image/svg+xml" } });
+  }) as unknown as typeof fetch;
+  try {
+    await expect(fetchRemoteImage("https://8.8.8.8/vector.svg")).rejects.toMatchObject({ status: 415 });
+    expect(sentLoopHeaders).toEqual(["1"]);
+  } finally { globalThis.fetch = originalFetch; }
+});
+
+test("cancels a stalled body stream on timeout even if fetch ignores abort", async () => {
+  const originalFetch = globalThis.fetch;
+  let cancelled = false;
+  globalThis.fetch = (async () => new Response(new ReadableStream({
+    start(controller) { controller.enqueue(new Uint8Array([1])); },
+    cancel() { cancelled = true; },
+  }), { headers: { "Content-Type": "image/png" } })) as unknown as typeof fetch;
+  try {
+    await expect(fetchRemoteImage("https://8.8.8.8/stalled.png", 20)).rejects.toMatchObject({
+      status: 502,
+      message: "The image host took too long to respond.",
+    });
     expect(cancelled).toBe(true);
   } finally { globalThis.fetch = originalFetch; }
 });

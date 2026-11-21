@@ -1,9 +1,10 @@
 import { z } from "zod";
 import { transformImage } from "./image";
 import { assertSafeRemoteUrl, fetchRemoteImage, RemoteImageError } from "./remote-image";
+import { PUBLIC_URL } from "./security";
 import { errorMessage, filters, MAX_DIMENSION, MAX_FILE_BYTES, MAX_PIXELS, parseTransformSettings } from "./transform";
 
-export const PUBLIC_URL = new URL(process.env.SMUSH_PUBLIC_URL ?? "https://smush.lol").origin;
+export { PUBLIC_URL };
 export const MAX_INLINE_BYTES = 4 * 1024 * 1024;
 export const MAX_AGENT_BODY_BYTES = 6 * 1024 * 1024;
 
@@ -50,6 +51,7 @@ export const capabilities = {
   browserOnlyFeatures: ["AVIF encoding", "crop UI", "background removal", "watermarks", "redaction", "finishing effects", "batch ZIP", "recipes", "photo corrections", "color replacement and color-key transparency", "creative pixel effects", "straightening", "reflections", "repeating patterns", "drop shadows", "toolbox result chaining"],
   endpoints: { mcp: `${PUBLIC_URL}/mcp`, docs: `${PUBLIC_URL}/docs`, openapi: `${PUBLIC_URL}/openapi.json`, usage: `${PUBLIC_URL}/llms.txt` },
 };
+export const capabilitiesJson = JSON.stringify(capabilities);
 
 export class AgentInputError extends Error {
   constructor(message: string, readonly status = 400) { super(message); }
@@ -59,14 +61,35 @@ export function settingsFromOptions(options: z.infer<typeof optionsSchema> = {})
   return parseTransformSettings(Object.fromEntries(Object.entries(options).map(([key, value]) => [key, String(value)])));
 }
 
+function base64CharValue(code: number): number {
+  if (code >= 65 && code <= 90) return code - 65; // A-Z
+  if (code >= 97 && code <= 122) return code - 71; // a-z
+  if (code >= 48 && code <= 57) return code + 4; // 0-9
+  if (code === 43) return 62; // +
+  if (code === 47) return 63; // /
+  return -1;
+}
+
 async function loadSource(source: ImageSource) {
   if ("url" in source) return fetchRemoteImage(source.url);
-  if (source.base64.length % 4 !== 0 || !/^[A-Za-z0-9+/]*={0,2}$/.test(source.base64)) {
+  const encoded = source.base64;
+  if (encoded.length % 4 !== 0 || !/^[A-Za-z0-9+/]+={0,2}$/.test(encoded)) {
     throw new AgentInputError("Use standard padded base64 without a data-URL prefix.");
   }
-  const bytes = Buffer.from(source.base64, "base64");
-  if (bytes.length > MAX_INLINE_BYTES) throw new AgentInputError("Inline images must be 4 MiB or smaller. Use /api/smush for larger uploads.", 413);
-  if (bytes.toString("base64") !== source.base64) throw new AgentInputError("Invalid base64 image encoding.");
+  const pad = encoded.endsWith("==") ? 2 : encoded.endsWith("=") ? 1 : 0;
+  const decodedLength = (encoded.length / 4) * 3 - pad;
+  if (decodedLength > MAX_INLINE_BYTES) {
+    throw new AgentInputError("Inline images must be 4 MiB or smaller. Use /api/smush for larger uploads.", 413);
+  }
+  // Verify canonical padding bits in O(1) without re-encoding up to 4 MiB.
+  if (pad === 2 && (base64CharValue(encoded.charCodeAt(encoded.length - 3)) & 0x0f) !== 0) {
+    throw new AgentInputError("Invalid base64 image encoding.");
+  }
+  if (pad === 1 && (base64CharValue(encoded.charCodeAt(encoded.length - 2)) & 0x03) !== 0) {
+    throw new AgentInputError("Invalid base64 image encoding.");
+  }
+  const bytes = Buffer.from(encoded, "base64");
+  if (bytes.length !== decodedLength) throw new AgentInputError("Invalid base64 image encoding.");
   return { bytes, filename: source.filename ?? "image" };
 }
 

@@ -7,21 +7,44 @@ import { hasEffects } from "./effect-settings";
 import { paintEffects } from "./effects";
 import { removeBackground } from "./background";
 import { cropRect } from "./crop-geometry";
-import { parseTransformSettings, MAX_PIXELS, MAX_DIMENSION } from "../src/transform";
+import { parseTransformSettings, outputFilename, MAX_PIXELS, MAX_DIMENSION } from "../src/transform";
 import { fitTargetSize } from "../src/target-size";
+
+const SVG_NS = "http://www.w3.org/2000/svg";
+const BLOCKED_SVG_TAGS = new Set([
+  "script", "foreignobject", "style", "animate", "animatemotion", "animatetransform",
+  "set", "image", "feimage", "use", "iframe", "object", "embed", "link", "meta",
+  "a", "audio", "video", "discard", "handler", "listener",
+]);
+const EXTERNAL_URL_RE = /url\s*\((?!\s*['"]?#[A-Za-z0-9_.:-]+['"]?\s*\))/i;
+
+let idleCodecWorker: Worker | null = null;
 
 export const isSvg = (file: File) => file.type === "image/svg+xml" || /\.svg$/i.test(file.name);
 export const usesBrowser = (file: File | null, fields: Record<string, string>) => ["true", "on"].includes(fields.localOnly ?? "") || hasFinishing(fields) || hasEffects(fields) || fields.format === "avif" || Boolean(file && isSvg(file));
 export async function safeSource(file: File): Promise<Blob> {
   if (!isSvg(file)) return file;
-  const xml = new DOMParser().parseFromString(await file.text(), "image/svg+xml");
+  const text = await file.text();
+  if (/<!DOCTYPE|<!ENTITY|<\?xml-stylesheet/i.test(text)) throw new Error("SVG document entities and external stylesheets are not supported.");
+  const xml = new DOMParser().parseFromString(text, "image/svg+xml");
   if (xml.querySelector("parsererror") || xml.documentElement.localName !== "svg") throw new Error("This SVG is invalid.");
-  // Reject active content and external dependencies; images must render independently.
+  // Reject active content, foreign namespaces, and external dependencies; images must render independently.
   for (const node of Array.from(xml.querySelectorAll("*"))) {
-    if (["script", "foreignObject", "style", "animate", "animateMotion", "animateTransform", "set", "image", "use"].includes(node.localName)) throw new Error("Use a self-contained SVG with paths and shapes, without scripts, stylesheets, images, or linked symbols.");
-    for (const attr of Array.from(node.attributes)) if (/^on/i.test(attr.name) || /(?:href|src)$/i.test(attr.name) || /url\s*\(\s*[^#]/i.test(attr.value) || /@import/i.test(attr.value)) throw new Error("Remove external references and active content from the SVG.");
+    if ((node.namespaceURI && node.namespaceURI !== SVG_NS) || BLOCKED_SVG_TAGS.has(node.localName.toLowerCase())) {
+      throw new Error("Use a self-contained SVG with paths and shapes, without scripts, stylesheets, images, or linked symbols.");
+    }
+    for (const attr of Array.from(node.attributes)) {
+      if (
+        /^on/i.test(attr.name) ||
+        /(?:href|src)$/i.test(attr.name) ||
+        /@import/i.test(attr.value) ||
+        /(?:javascript|vbscript|data)\s*:/i.test(attr.value) ||
+        EXTERNAL_URL_RE.test(attr.value)
+      ) {
+        throw new Error("Remove external references and active content from the SVG.");
+      }
+    }
   }
-  if (/<!DOCTYPE|<!ENTITY/i.test(await file.text())) throw new Error("SVG document entities are not supported.");
   return new Blob([new XMLSerializer().serializeToString(xml)], { type: "image/svg+xml" });
 }
 export async function decodeSource(file: File): Promise<{ image: HTMLImageElement; release: () => void }> {
@@ -83,7 +106,9 @@ export async function localResponse(file: File, fields: Record<string, string>, 
     let result: { output: Blob; quality: number };
     if (format === "avif" || format === "webp") {
       signal.throwIfAborted();
-      const worker = new Worker(`/codec-worker.js?v=${SMUSH_BUILD_ID}`, { type: "module" });
+      const worker = idleCodecWorker ?? new Worker(`/codec-worker.js?v=${SMUSH_BUILD_ID}`, { type: "module" });
+      idleCodecWorker = null;
+      let reusable = false;
       try {
         result = await new Promise((resolve, reject) => {
           const abort = () => reject(signal.reason);
@@ -93,10 +118,18 @@ export async function localResponse(file: File, fields: Record<string, string>, 
           const pixels = canvas.getContext("2d")!.getImageData(0, 0, canvas.width, canvas.height);
           worker.postMessage({ pixels, format, quality: settings.quality, lossless: settings.lossless, targetKB: settings.targetKB }, [pixels.data.buffer]);
         });
-      } finally { worker.terminate(); }
+        reusable = !signal.aborted;
+      } finally {
+        worker.onmessage = null;
+        worker.onerror = null;
+        if (reusable && !idleCodecWorker) idleCodecWorker = worker;
+        else worker.terminate();
+      }
     } else result = settings.targetKB ? await fitTargetSize(settings.quality, settings.targetKB * 1024, encode) : await encode(settings.quality);
     signal.throwIfAborted();
-    const name = file.name.replace(/\.[^.]+$/, "").replace(/[^\w.-]/g, "-");
-    return new Response(result.output, { headers: { "content-type": result.output.type, "content-disposition": `attachment; filename="smushed-${name}.${format === "jpeg" ? "jpg" : format}"`, "x-image-width": String(canvas.width), "x-image-height": String(canvas.height), "x-image-quality": String(result.quality), "x-processing-mode": "browser" } });
+    const filename = format === "avif"
+      ? outputFilename(file.name, "webp").replace(/\.webp$/, ".avif")
+      : outputFilename(file.name, format as "jpeg" | "png" | "webp");
+    return new Response(result.output, { headers: { "content-type": result.output.type, "content-disposition": `attachment; filename="${filename}"`, "x-image-width": String(canvas.width), "x-image-height": String(canvas.height), "x-image-quality": String(result.quality), "x-processing-mode": "browser" } });
   } finally { canvas.width = canvas.height = 0; }
 }

@@ -11,7 +11,7 @@ export async function createArchive(results: ExportResult[]): Promise<Blob> {
     else chunks.push(new Uint8Array(data));
   });
   for (const result of results) {
-    const base = result.filename.replace(/[\\/\x00-\x1f]/g, "_").replace(/^\.+/, "_") || "image";
+    const base = result.filename.replace(/[\\/\x00-\x1f\x7f]/g, "_").replace(/^\.+/, "_") || "image";
     let name = base;
     let index = 2;
     while (used.has(name.toLowerCase())) {
