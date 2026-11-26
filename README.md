@@ -122,22 +122,9 @@ JSON API and MCP request bodies have a 30-second read deadline in addition to by
 
 Both endpoints support the same transform fields. The response body is the transformed image. Headers include the output dimensions, format, Bun version, and a safe output filename.
 
-## Deploy on Railway
+## Production deployment
 
-Railway's current Bun guide recommends a Dockerfile because Railpack does not auto-detect Bun projects yet. This repo includes:
-
-- a multi-stage `Dockerfile` pinned to `oven/bun:1.4.2-alpine`
-- `railway.json` with Dockerfile build settings, `/health` checks, and restart/draining policy
-- a server that listens on Railway's injected `PORT`
-
-From the Railway dashboard, create a project from `nearbycoder/smush.lol`, then generate a Railway domain under **Settings → Networking**. Once it is healthy, add `smush.lol` as a custom domain.
-
-Railway will provide two DNS records:
-
-1. A CNAME/ALIAS target such as `example.up.railway.app`
-2. A TXT ownership-verification record
-
-Add both records at the DNS host. For an apex domain, the provider must support CNAME flattening, ALIAS, or ANAME; Railway does not publish a static IP for an A record. Requests will return 404 until the TXT verification succeeds.
+Coolify builds the pinned Bun Dockerfile from `main` when it receives the signed GitHub push webhook. The app listens on `PORT` and reports readiness at `/health`. Vercel DNS points `smush.lol` to the Coolify edge.
 
 Cropping and JPEG background fill use the browser canvas before uploading a lossless PNG to Bun.Image. They require a browser-decodable source and apply before server resize/rotation. Prepared uploads retain the 15 MB limit. Queue crops use the same ratio and relative position on each image. `/api/source` fetches validated original bytes for remote-image previews using the same URL restrictions; it returns `no-store` responses. Browser crop/background settings are not part of reusable transform URLs.
 
